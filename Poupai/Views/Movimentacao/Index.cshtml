@@ -1,0 +1,167 @@
+﻿@model List<Poupai.ViewModel.MovimentacaoViewModel.MovimentacaoData>
+
+
+<div id="modal-container"></div>
+
+<div class="bg-dark rounded shadow text-white d-flex">
+	<h2 class="mb-4">Movimentações</h2>
+	<button onclick="getCreateModal(this)" class="btn btn-success mb-3" id="btn-create-movimentacao">+ Novo</button>
+</div>
+<div id="card-movi" class="scroll-card my-sm-1">
+
+	@await Html.PartialAsync("_Movimentacao", Model)
+</div>
+
+
+@section Scripts {
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+	<script
+		src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.12/jquery.validate.unobtrusive.min.js"></script>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+	<script src="~/js/snackbar.js"></script>
+
+	<script>
+		jQuery.validator.methods.number = function (value, element) {
+			value = value.replace(",", ".");
+			return this.optional(element) || !isNaN(value);
+		};
+
+		var reloadCards = function () {
+			$.ajax({
+				url: "/Movimentacao/Index",
+				method: "GET",
+				success: function (data) {
+					$("#card-movi").html(data);
+				},
+				error: function (error) {
+					console.log(error);
+				}
+			});
+		};
+
+		var getCreateModal = function (button) {
+			$("#btn-create-movimentacao").prop("disabled", true);
+			$.ajax({
+				url: `/Movimentacao/Create`,
+				method: "GET",
+				success: function (data) {
+					$("#modal-container").html(data);
+
+					var modalEl = document.getElementById('createMovimentacaoModal');
+					var modal = new bootstrap.Modal(modalEl);
+					modal.show();
+
+					var form = $("#form-create-movimentacao");
+					$.validator.unobtrusive.parse(form);
+
+					modalEl.addEventListener('hidden.bs.modal', function () {
+						button.disabled = false;
+					}, { once: true });
+				},
+				error: function (error) {
+					console.error("Erro ao buscar dados do modal: ", error);
+					button.disabled = false;
+				}
+			});
+		};
+		var createmovimentacao = function () {
+			var form = $("#form-create-movimentacao");
+			$("#btn-salvar").prop("disabled", true);
+
+			if (form.valid()) {
+				var formData = form.serialize();
+
+				$.ajax({
+					url: './Movimentacao/Create',
+					method: 'POST',
+					data: formData,
+					success: function (data) {
+						document.activeElement.blur();
+						$('#createMovimentacaoModal').modal('hide');
+						reloadCards();
+					},
+					error: function (jqXHR, textStatus, errorThrown) {
+						alert("Ocorreu um erro ao criar o projeto. Tente novamente.");
+						console.error("Erro:", textStatus, errorThrown);
+						$("#btn-salvar").prop("disabled", false);
+
+					}
+				});
+
+			}
+			else {
+				$("#btn-salvar").prop("disabled", false);
+			}
+		};
+
+
+
+		var getEditModal = function (id, btn) {
+			btn.disabled = true;
+
+			$.ajax({
+				url: `/Movimentacao/Edit?id=${id}`,
+				method: "GET",
+				success: function (data) {
+					$("#modal-container").html(data);
+
+					var modal = new bootstrap.Modal(document.getElementById('editMovimentacaoModal'));
+					modal.show();
+
+					const form = $("#form-edit-movimentacao");
+					$.validator.unobtrusive.parse(form);
+				},
+				error: function (error) {
+					console.error("Erro ao buscar dados do modal: ", error);
+				},
+				complete: function () {
+					btn.disabled = false;
+				}
+			});
+		};
+
+
+		var editMovimentacao = function () {
+			const form = $("#form-edit-movimentacao");
+			form.validate();
+			if (form.valid()) {
+				$.ajax({
+					url: './Movimentacao/Edit',
+					method: 'POST',
+					data: form.serialize(),
+					success: function () {
+						var modal = bootstrap.Modal.getInstance(document.getElementById('editMovimentacaoModal'));
+						if (modal) {
+							modal.hide();
+						}
+						showSnackbar("Alterações Salvas!", true, false);
+
+						reloadCards();
+					},
+					error: function (error) {
+						showSnackbar("Erro na criação do equipamento!", false);
+						console.log(error);
+					}
+				});
+			}
+		};
+
+		var deleteMovimentacao = function (id) {
+			$.ajax({
+				url: `/Movimentacao/Delete?id=${id}`,
+				method: "POST",
+				success: function (data) {
+					showSnackbar(data.message, true, false);
+					reloadCards();
+
+				},
+				error: function (error) {
+					console.error("Erro ao deletar movimentação: ", error);
+				}
+			});
+		};
+
+	</script>
+}

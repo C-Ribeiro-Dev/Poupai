@@ -1,0 +1,47 @@
+@model Poupai.ViewModel.MovimentacaoFixaViewModels.CreateMovimentacaoFixaData
+
+<div class="modal fade" id="editMovimentacaoFixaModal" tabindex="-1" aria-labelledby="editMovimentacaoFixaModal" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content bg-dark text-light border-secondary">
+			<div class="modal-header border-secondary">
+				<h5 class="modal-title" id="editMovimentacaoFixaModal">Nova Movimentação Fixa</h5>
+				<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+			</div>
+			<form id="form-edit-movimentacao-fixa" method="post">
+                <input type="hidden" asp-for="Id"/>
+				<div class="modal-body">
+					<div class="mb-3">
+						<label asp-for="Nome" class="form-label">Nome</label>
+						<input asp-for="Nome" class="form-control bg-dark text-light border-secondary" />
+						<span asp-validation-for="Nome" class="text-danger"></span>
+					</div>
+
+					<div class="mb-3">
+						<label class="form-label text-light">Tipo de Movimentação</label>
+						@Html.DropDownListFor(m => m.TipoMovimentacaoId, Model.ListaTipos, "Selecionar Tipo",
+															new { @class = "form-control bg-dark text-light border-secondary", id = "TipoMovimentacaoID" })
+					</div>
+					<div class="mb-3">
+						<label asp-for="ValorS" class="form-label">Valor</label>
+						<input asp-for="ValorS" class="form-control bg-dark text-light border-secondary" />
+						<span asp-validation-for="ValorS" class="text-danger"></span>
+					</div>
+					<div class="mb-3">
+						<label asp-for="DiaVencimento" class="form-label">Dia Do Vencimento</label>
+						<input asp-for="DiaVencimento" class="form-control bg-dark text-light border-secondary" />
+						<span asp-validation-for="DiaVencimento" class="text-danger"></span>
+					</div>
+					
+					<div class="form-check mb-3">
+						<input asp-for="IsEntrada" class="form-check-input" type="checkbox" id="IsEntrada" />
+						<label class="form-check-label text-light" asp-for="IsEntrada">Entrada</label>
+						<span asp-validation-for="IsEntrada" class="text-danger"></span>
+					</div>
+				</div>
+			</form>
+			<div class="modal-footer border-secondary">
+				<button type="button" id="btn-edit-fixa" onclick="editMovimentacao()" class="btn btn-success">Salvar</button>
+			</div>
+		</div>
+	</div>
+</div>

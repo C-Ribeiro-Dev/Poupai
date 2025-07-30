@@ -1,0 +1,80 @@
+﻿@model List<Poupai.ViewModel.TipoMovimentacaoViewModel.TipoMovimentacaoData>
+
+
+<div id="modal-container"></div>
+
+<div class="bg-dark rounded shadow text-white d-flex">
+	<h2 class="mb-4">Tipos de Movimentação</h2>
+	<button onclick="getCreateTipoMoviModal()" class="btn btn-success mb-3">+ Novo</button>
+</div>
+<div id="card-movi" class="scroll-card my-sm-1">
+
+	@await Html.PartialAsync("_TipoMovimentacao", Model)
+</div>
+
+
+@section Scripts {
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.12/jquery.validate.unobtrusive.min.js"></script>
+
+	<script src="~/js/snackbar.js"></script>
+	<script src="~/js/reloadCard.js"></script>
+	<script src="~/js/postmovimentacao.js"></script>
+
+	<script>
+			var reloadCards = function () {
+			$.ajax({
+				url: "/TipoMovimentacao/Index",
+				method: "GET",
+				success: function (data) {
+					$("#card-movi").html(data);
+				},
+				error: function (error) {
+					console.log(error);
+				}
+			});
+		};
+
+		var getCreateTipoMoviModal = function () {
+			$.ajax({
+				url: `/TipoMovimentacao/Create`,
+				method: "GET",
+				success: function (data) {
+					$("#modal-container").html(data);
+
+					var modal = new bootstrap.Modal(document.getElementById('createTipoMovimentacaoModal'));
+					modal.show();
+
+					const form = $("#form-tipomovimentacao");
+					$.validator.unobtrusive.parse(form);
+				},
+				error: function (error) {
+					console.error("Erro ao buscar dados do modal: ", error);
+				}
+			});
+		};
+
+		var createtipomovimentacao = function () {
+			const form = $("#form-tipomovimentacao");
+			form.validate();
+			if (form.valid()) {
+				$.ajax({
+					url: './TipoMovimentacao/Create',
+					method: 'POST',
+					data: form.serialize(),
+					success: function () {
+						var modal = bootstrap.Modal.getInstance(document.getElementById('createTipoMovimentacaoModal'));
+						if (modal) modal.hide();
+						reloadCards();
+					},
+					error: function (error) {
+						showSnackbar("Erro na criação do equipamento!", false);
+						console.log(error);
+					}
+				});
+			}
+		};
+
+	</script>
+}

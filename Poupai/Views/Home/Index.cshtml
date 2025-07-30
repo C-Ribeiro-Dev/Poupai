@@ -1,0 +1,148 @@
+﻿@model Poupai.ViewModel.HomeViewModel.HomeData
+
+<div class="container">
+	<h2 class="text-light mb-4" style="text-align:center;">Resumo do Caixa</h2>
+</div>
+<div id="card-movi">
+	@await Html.PartialAsync("_Movimentacoes", Model)
+</div>
+<div id="modal"></div>
+
+
+@section Scripts {
+	@{
+		await Html.RenderPartialAsync("_ValidationScriptsPartial");
+	}
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+	<script
+		src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.12/jquery.validate.unobtrusive.min.js"></script>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+		integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+	<script src="~/js/snackbar.js"></script>
+	<script>
+		var reloadCards = function () {
+			$.ajax({
+				url: "/Home/Index",
+				method: "GET",
+				success: function (data) {
+					$("#card-movi").html(data);
+				},
+				error: function (error) {
+					console.log(error);
+				}
+			});
+		};
+
+		var getCreateModal = function (button) {
+			$("#btn-create-movimentacao").prop("disabled", true);
+			$.ajax({
+				url: `/Movimentacao/Create`,
+				method: "GET",
+				success: function (data) {
+					$("#modal").html(data);
+
+					var modalEl = document.getElementById('createMovimentacaoModal');
+					var modal = new bootstrap.Modal(modalEl);
+					modal.show();
+
+					var form = $("#form-create-movimentacao");
+					$.validator.unobtrusive.parse(form);
+
+					modalEl.addEventListener('hidden.bs.modal', function () {
+						button.disabled = false;
+					}, { once: true });
+				},
+				error: function (error) {
+					console.error("Erro ao buscar dados do modal: ", error);
+					button.disabled = false;
+				}
+			});
+		};
+
+		var createmovimentacao = function () {
+			var form = $("#form-create-movimentacao");
+			$("#btn-salvar").prop("disabled", true);
+
+			if (form.valid()) {
+				var formData = form.serialize();
+
+				$.ajax({
+					url: './Movimentacao/Create',
+					method: 'POST',
+					data: formData,
+					success: function (data) {
+						document.activeElement.blur();
+						$('#createMovimentacaoModal').modal('hide');
+						reloadCards();
+						showSnackbar("Movimentação Criada com Sucesso", true, false)
+					},
+					error: function (jqXHR, textStatus, errorThrown) {
+						alert("Ocorreu um erro ao criar o projeto. Tente novamente.");
+						console.error("Erro:", textStatus, errorThrown);
+						$("#btn-salvar").prop("disabled", false);
+					}
+				});
+
+			}
+			else {
+				$("#btn-salvar").prop("disabled", false);
+			}
+		};
+
+		var getUpDateModal = function (id) {
+			$("#btn-update-movimentacao-fixa").prop("disabled", true);
+			$.ajax({
+				url: `/MovimentacaoFixa/UpDatePagamento?id=${id}`,
+				method: "GET",
+				success: function (data) {
+					$("#modal").html(data);
+
+					var modalEl = document.getElementById('upDateMovimentacaoFixaModal');
+					var modal = new bootstrap.Modal(modalEl);
+					modal.show();
+
+					var form = $("#form-update-movimentacao-fixa");
+					$.validator.unobtrusive.parse(form);
+
+					modalEl.addEventListener('hidden.bs.modal', function () {
+						$("#btn-update-movimentacao-fixa").prop("disabled", false);
+					}, { once: true });
+
+				},
+				error: function (error) {
+					console.error("Erro ao buscar dados do modal: ", error);
+					button.disabled = false;
+				}
+			});
+		};
+
+		var upDatePagamento = function () {
+			var form = $("#form-update-movimentacao-fixa");
+			if (form.valid()) {
+				$("#btn-update-fixa").prop("disabled", true);
+				var formData = form.serialize();
+				$.ajax({
+					url: '/MovimentacaoFixa/UpDatePagamento',
+					method: 'POST',
+					data: formData,
+					success: function (data) {
+						document.activeElement.blur();
+						$('#upDateMovimentacaoFixaModal').modal('hide');
+						reloadCards();
+						showSnackbar("Atualizado com Sucesso", true, false)
+					},
+					error: function (jqXHR, textStatus, errorThrown) {
+						alert("Ocorreu um erro ao criar o projeto. Tente novamente.");
+						console.error("Erro:", textStatus, errorThrown);
+						$("#btn-update-fixa").prop("disabled", false);
+					}
+				});
+			}
+			else {
+				$("#btn-salvar").prop("disabled", false);
+			}
+		};
+	</script>
+}

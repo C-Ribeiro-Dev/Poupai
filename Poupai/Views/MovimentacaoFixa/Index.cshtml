@@ -1,0 +1,260 @@
+﻿@model List<Poupai.ViewModel.MovimentacaoFixaViewModels.MovimentacaoFixaData>
+
+
+
+<div id="modal"></div>
+
+<div class="bg-dark rounded shadow text-white d-flex">
+	<h2 class="mb-4">Movimentações Mensais</h2>
+	<button onclick="getCreateModal(this)" class="btn btn-success mb-3" id="btn-create-movimentacao-fixa">+
+		Novo</button>
+</div>
+<div id="card-movi" class="scroll-card my-sm-1">
+
+	@await Html.PartialAsync("_MovimentacaoFixa", Model)
+</div>
+
+
+@section Scripts {
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+	<script
+		src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.12/jquery.validate.unobtrusive.min.js"></script>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+	<script src="~/js/snackbar.js"></script>
+
+	<script>
+		var reloadCards = function () {
+			$.ajax({
+				url: "/MovimentacaoFixa/Index",
+				method: "GET",
+				success: function (data) {
+					$("#card-movi").html(data);
+				},
+				error: function (error) {
+					console.log(error);
+				}
+			});
+		};
+
+		var getCreateModal = function (button) {
+			$("#btn-create-movimentacao-fixa").prop("disabled", true);
+			$.ajax({
+				url: `/MovimentacaoFixa/Create`,
+				method: "GET",
+				success: function (data) {
+					$("#modal").html(data);
+
+					var modalEl = document.getElementById('createMovimentacaoFixaModal');
+					var modal = new bootstrap.Modal(modalEl);
+					modal.show();
+
+					var form = $("#form-create-movimentacao-fixa");
+					$.validator.unobtrusive.parse(form);
+					modalEl.addEventListener('hidden.bs.modal', function () {
+						$("#btn-create-movimentacao-fixa").prop("disabled", false);
+					}, { once: true });
+				},
+				error: function (error) {
+					console.error("Erro ao buscar dados do modal: ", error);
+					button.disabled = false;
+				}
+			});
+		};
+
+		var createmovimentacao = function () {
+			var form = $("#form-create-movimentacao-fixa");
+
+			if (form.valid()) {
+				$("#btn-salvar-fixa").prop("disabled", true);
+				var formData = form.serialize();
+
+				$.ajax({
+					url: './MovimentacaoFixa/Create',
+					method: 'POST',
+					data: formData,
+					success: function (data) {
+						document.activeElement.blur();
+						$('#createMovimentacaoFixaModal').modal('hide');
+						reloadCards();
+					},
+					error: function (jqXHR, textStatus, errorThrown) {
+						alert("Ocorreu um erro ao criar o projeto. Tente novamente.");
+						console.error("Erro:", textStatus, errorThrown);
+						$("#btn-salvar-fixa").prop("disabled", false);
+
+					}
+				});
+
+			}
+			else {
+				$("#btn-salvar").prop("disabled", false);
+			}
+		};
+
+		var getUpDateModal = function (id) {
+			$("#btn-update-movimentacao-fixa").prop("disabled", true);
+			$.ajax({
+				url: `/MovimentacaoFixa/UpDatePagamento?id=${id}`,
+				method: "GET",
+				success: function (data) {
+					$("#modal").html(data);
+
+					var modalEl = document.getElementById('upDateMovimentacaoFixaModal');
+					var modal = new bootstrap.Modal(modalEl);
+					modal.show();
+
+					var form = $("#form-update-movimentacao-fixa");
+					$.validator.unobtrusive.parse(form);
+
+					modalEl.addEventListener('hidden.bs.modal', function () {
+						$("#btn-update-movimentacao-fixa").prop("disabled", false);
+					}, { once: true });
+
+				},
+				error: function (error) {
+					console.error("Erro ao buscar dados do modal: ", error);
+					button.disabled = false;
+				}
+			});
+		};
+
+		var upDatePagamento = function () {
+
+			var form = $("#form-update-movimentacao-fixa");
+			if (form.valid()) {
+				$("#btn-update-fixa").prop("disabled", true);
+				var formData = form.serialize();
+				$.ajax({
+					url: '/MovimentacaoFixa/UpDatePagamento',
+					method: 'POST',
+					data: formData,
+					success: function (data) {
+						document.activeElement.blur();
+						$('#upDateMovimentacaoFixaModal').modal('hide');
+						reloadCards();
+					},
+					error: function (jqXHR, textStatus, errorThrown) {
+						alert("Ocorreu um erro ao criar o projeto. Tente novamente.");
+						console.error("Erro:", textStatus, errorThrown);
+						$("#btn-update-fixa").prop("disabled", false);
+					}
+				});
+			}
+			else {
+				$("#btn-salvar").prop("disabled", false);
+			}
+		};
+
+		var getEditModal = function (id) {
+			$("#btn-edit-movimentacao-fixa").prop("disabled", true);
+			$.ajax({
+				url: `/MovimentacaoFixa/Edit?id=${id}`,
+				method: "GET",
+				success: function (data) {
+					$("#modal").html(data);
+
+					var modalEl = document.getElementById('editMovimentacaoFixaModal');
+					var modal = new bootstrap.Modal(modalEl);
+					modal.show();
+
+					var form = $("#form-edit-movimentacao-fixa");
+					$.validator.unobtrusive.parse(form);
+
+					modalEl.addEventListener('hidden.bs.modal', function () {
+						$("#btn-edit-movimentacao-fixa").prop("disabled", false);
+					}, { once: true });
+				},
+				error: function (error) {
+					console.error("Erro ao buscar dados do modal: ", error);
+					button.disabled = false;
+				}
+			});
+		};
+
+		var editMovimentacao = function () {
+			var form = $("#form-edit-movimentacao-fixa");
+
+			if (form.valid()) {
+				$("#btn-edit-fixa").prop("disabled", true);
+				var formData = form.serialize();
+				$.ajax({
+					url: './MovimentacaoFixa/Edit',
+					method: 'POST',
+					data: formData,
+					success: function (data) {
+						document.activeElement.blur();
+						$('#editMovimentacaoFixaModal').modal('hide');
+						reloadCards();
+					},
+					error: function (jqXHR, textStatus, errorThrown) {
+						alert("Ocorreu um erro ao criar o projeto. Tente novamente.");
+						console.log("Erro:", textStatus, errorThrown);
+						$("#btn-edit-fixa").prop("disabled", false);
+
+					}
+				});
+			}
+			else {
+				$("#btn-salvar").prop("disabled", false);
+			}
+		};
+
+		var getDeleteModal = function (id) {
+			$("#btn-delete-movimentacao-fixa").prop("disabled", true);
+			$.ajax({
+				url: `/MovimentacaoFixa/Delete?id=${id}`,
+				method: "GET",
+				success: function (data) {
+					$("#modal").html(data);
+
+					var modalEl = document.getElementById('deleteMovimentacaoFixaModal');
+					var modal = new bootstrap.Modal(modalEl);
+					modal.show();
+
+					var form = $("#form-delete-movimentacao-fixa");
+					$.validator.unobtrusive.parse(form);
+
+					modalEl.addEventListener('hidden.bs.modal', function () {
+						$("#btn-delete-movimentacao-fixa").prop("disabled", false);
+					}, { once: true });
+
+				},
+				error: function (error) {
+					console.error("Erro ao buscar dados do modal: ", error);
+					button.disabled = false;
+				}
+			});
+		};
+
+		var deletePagamento = function () {
+			var form = $("#form-delete-movimentacao-fixa");
+
+			if (form.valid()) {
+				$("#btn-delete-fixa").prop("disabled", true);
+				var formData = form.serialize();
+				$.ajax({
+					url: '/MovimentacaoFixa/Delete',
+					method: 'POST',
+					data: formData,
+					success: function (data) {
+						document.activeElement.blur();
+						$('#deleteMovimentacaoFixaModal').modal('hide');
+						reloadCards();
+					},
+					error: function (jqXHR, textStatus, errorThrown) {
+						alert("Ocorreu um erro ao criar o projeto. Tente novamente.");
+						console.error("Erro:", textStatus, errorThrown);
+						$("#btn-delete-fixa").prop("disabled", false);
+					}
+				});
+			}
+			else {
+				$("#btn-delete-fixa").prop("disabled", false);
+			}
+		};
+
+
+	</script>
+}

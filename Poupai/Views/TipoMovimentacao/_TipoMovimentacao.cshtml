@@ -1,0 +1,21 @@
+﻿@model List<Poupai.ViewModel.TipoMovimentacaoViewModel.TipoMovimentacaoData>
+
+<div class="custom-table">
+	@foreach (var item in Model)
+	{
+		<div class="custom-table-row">
+			<div class="custom-table-cell">
+				<span class="cell-label">Nome</span>
+				<span class="cell-value">@item.Nome</span>
+			</div>
+			<div class="custom-table-cell">
+				<span class="cell-label">Descrição</span>
+				<span class="cell-value">@item.Descricao</span>
+			</div>
+			<div class="custom-table-cell">
+				<span class="cell-label">Tipo</span>
+				<span class="cell-value">@item.Tipo</span>
+			</div>
+		</div>
+	}
+</div>

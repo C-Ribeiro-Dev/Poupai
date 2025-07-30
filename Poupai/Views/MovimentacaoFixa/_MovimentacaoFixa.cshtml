@@ -1,0 +1,80 @@
+﻿@model List<Poupai.ViewModel.MovimentacaoFixaViewModels.MovimentacaoFixaData>
+
+@foreach (var item in Model)
+{
+	<div class="custom-table-row">
+
+		<div class="custom-table-cell">
+			<span class="cell-label">Vencimento</span>
+			<span class="cell-value">@item.DataVencimento</span>
+		</div>
+		<div class="custom-table-cell">
+			<span class="cell-label">Nome</span>
+			<span class="cell-value">@item.Nome</span>
+		</div>
+		<div class="custom-table-cell">
+			<span class="cell-label">Categoria</span>
+			<span class="cell-value">@item.Categoria</span>
+		</div>
+
+		<div class="custom-table-cell">
+			<span class="cell-label">Data Ult/Pagamento</span>
+			<span class="cell-value">@item.UltimoPagamento</span>
+		</div>
+		
+		<div class="custom-table-cell">
+			@if (item.Status.ToLower().Contains("em dia"))
+			{
+				<span class="cell-label">Status</span>
+				<span class="cell-value text-success">@item.Status</span>
+			}
+			else
+			{
+				<span class="cell-label ">Status</span>
+				<span class="cell-value text-danger">@item.Status</span>
+			}
+		</div>
+		<div class="custom-table-cell">
+			@if (item.StatusPagamento.ToLower().Contains("em dia"))
+			{
+				<span class="cell-label">Status Pagamento</span>
+				<span class="cell-value text-success">@item.StatusPagamento</span>
+			}
+			else if (item.StatusPagamento.ToLower().Contains("atraso"))
+			{
+				<span class="cell-label">Status Pagamento</span>
+				<span class="cell-value text-warning">@item.StatusPagamento</span>
+			}
+			else
+			{
+				<span class="cell-label ">Status Pagamento</span>
+				<span class="cell-value text-danger">@item.StatusPagamento</span>
+			}
+		</div>
+		<div class="custom-table-cell">
+			<span class="cell-label">Tipo</span>
+			<span class="cell-value">@item.EntraOuSaida</span>
+		</div>
+		<div class="custom-table-cell">
+			<span class="cell-label">Valor</span>
+			<span class="cell-value">R$ @item.Valor</span>
+		</div>
+		<div class="custom-table-cell">
+			<span class="cell-label">Prox/Vencimento</span>
+			<span class="cell-value">@item.ProximoVencimento</span>
+		</div>
+		<div class="card-bottons d-flex">
+			<div id="btn-update-movimentacao-fixa" onclick="getUpDateModal(@item.Id)" class="circle-btn update" title="Confirmar Pagamento">
+				<i class="fas fa-money-check"></i>
+			</div>
+
+			<div id="btn-edit-movimentacao-fixa" onclick="getEditModal(@item.Id, this)" class="circle-btn edit" title="Editar">
+				<i class="fa-solid fa-pen-to-square"></i>
+			</div>
+			<div id="btn-delete-movimentacao-fixa" onclick="getDeleteModal(@item.Id)" class="circle-btn delete" title="Excluir">
+				<i class="fa-solid fa-trash"></i>
+			</div>
+			
+		</div>
+	</div>
+}
