@@ -16,18 +16,7 @@ export async function importarExtratoAction(
   const parsed = importacaoSchema.safeParse(payload);
   if (!parsed.success) return { success: false, error: "Dados inválidos." };
 
-  const { tipoEntradaId, tipoSaidaId, contaId, itens } = parsed.data;
-
-  // Valida os tipos (e direção correta)
-  const tipos = await prisma.tipoMovimentacao.findMany({
-    where: { userId, isDeleted: false, id: { in: [tipoEntradaId, tipoSaidaId] } },
-    select: { id: true, isEntrada: true },
-  });
-  const tipoEntrada = tipos.find((t) => t.id === tipoEntradaId);
-  const tipoSaida = tipos.find((t) => t.id === tipoSaidaId);
-  if (!tipoEntrada || !tipoSaida) {
-    return { success: false, error: "Tipo de movimentação não encontrado." };
-  }
+  const { contaId, itens } = parsed.data;
 
   if (contaId) {
     const conta = await prisma.conta.findFirst({
@@ -52,10 +41,20 @@ export async function importarExtratoAction(
     return { success: false, error: "Todas as transações selecionadas já foram importadas." };
   }
 
+  // Valida os tipos usados nos itens novos
+  const tipoIds = [...new Set(novos.map((i) => i.tipoId))];
+  const tipos = await prisma.tipoMovimentacao.findMany({
+    where: { userId, isDeleted: false, id: { in: tipoIds } },
+    select: { id: true },
+  });
+  if (tipos.length !== tipoIds.length) {
+    return { success: false, error: "Tipo de movimentação não encontrado." };
+  }
+
   await prisma.movimentacao.createMany({
     data: novos.map((i) => ({
       userId,
-      tipoId: i.isEntrada ? tipoEntradaId : tipoSaidaId,
+      tipoId: i.tipoId,
       valor: i.valor,
       data: new Date(`${i.data}T12:00:00.000Z`),
       categoria: i.categoria || null,

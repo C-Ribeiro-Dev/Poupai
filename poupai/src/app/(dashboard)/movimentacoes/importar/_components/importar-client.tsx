@@ -35,12 +35,14 @@ interface LinhaContaPreview extends LinhaExtrato {
   selecionada: boolean;
   jaImportada: boolean;
   categoria: string;
+  tipoId: number;
 }
 
 interface LinhaCartaoPreview extends LinhaCartao {
   selecionada: boolean;
   jaImportada: boolean;
   categoria: string;
+  tipoId: number;
 }
 
 interface ImportarClientProps {
@@ -109,6 +111,7 @@ export function ImportarClient({
               jaImportada: idsSet.has(l.idExterno),
               selecionada: !idsSet.has(l.idExterno),
               categoria: sugestoes[l.descricao.trim().toLowerCase()] ?? "",
+              tipoId: l.isEntrada ? tipoEntradaId : tipoSaidaId,
             }))
           );
         } else {
@@ -119,6 +122,7 @@ export function ImportarClient({
               jaImportada: idsSet.has(l.idExterno),
               selecionada: !idsSet.has(l.idExterno),
               categoria: (l.categoria || sugestoes[l.descricao.trim().toLowerCase()]) ?? "",
+              tipoId: l.isEntrada ? tipoEntradaId : tipoSaidaId,
             }))
           );
         }
@@ -136,6 +140,18 @@ export function ImportarClient({
     setNomeArquivo("");
   }
 
+  function handleSetTipoEntrada(v: number) {
+    setTipoEntradaId(v);
+    setLinhasConta((p) => p.map((l) => l.isEntrada ? { ...l, tipoId: v } : l));
+    setLinhasCartao((p) => p.map((l) => l.isEntrada ? { ...l, tipoId: v } : l));
+  }
+
+  function handleSetTipoSaida(v: number) {
+    setTipoSaidaId(v);
+    setLinhasConta((p) => p.map((l) => !l.isEntrada ? { ...l, tipoId: v } : l));
+    setLinhasCartao((p) => p.map((l) => !l.isEntrada ? { ...l, tipoId: v } : l));
+  }
+
   function handleImportar() {
     if (modo === "conta") {
       importarConta();
@@ -147,15 +163,11 @@ export function ImportarClient({
   function importarConta() {
     const selecionadas = linhasConta.filter((l) => l.selecionada && !l.jaImportada);
     if (!selecionadas.length) { toast.error("Nenhuma transação nova selecionada."); return; }
-    const temEntrada = selecionadas.some((l) => l.isEntrada);
-    const temSaida = selecionadas.some((l) => !l.isEntrada);
-    if (temEntrada && !tipoEntradaId) { toast.error("Selecione o tipo para entradas."); return; }
-    if (temSaida && !tipoSaidaId) { toast.error("Selecione o tipo para saídas."); return; }
+    const semTipo = selecionadas.filter((l) => !l.tipoId);
+    if (semTipo.length) { toast.error(`${semTipo.length} transação(ões) sem tipo definido.`); return; }
 
     startTransition(async () => {
       const result = await importarExtratoAction({
-        tipoEntradaId: tipoEntradaId || tipoSaidaId,
-        tipoSaidaId: tipoSaidaId || tipoEntradaId,
         contaId: contaId || undefined,
         itens: selecionadas.map((l) => ({
           data: l.data,
@@ -164,6 +176,7 @@ export function ImportarClient({
           descricao: l.descricao,
           categoria: l.categoria || undefined,
           idExterno: l.idExterno,
+          tipoId: l.tipoId,
         })),
       });
       if (result.success) {
@@ -180,12 +193,11 @@ export function ImportarClient({
   function importarCartao() {
     const selecionadas = linhasCartao.filter((l) => l.selecionada && !l.jaImportada);
     if (!selecionadas.length) { toast.error("Nenhuma transação nova selecionada."); return; }
-    if (!tipoSaidaId) { toast.error("Selecione o tipo para gastos no cartão."); return; }
+    const semTipo = selecionadas.filter((l) => !l.tipoId);
+    if (semTipo.length) { toast.error(`${semTipo.length} transação(ões) sem tipo definido.`); return; }
 
     startTransition(async () => {
       const result = await importarExtratoAction({
-        tipoEntradaId: tipoEntradaId || tipoSaidaId,
-        tipoSaidaId,
         contaId: undefined,
         itens: selecionadas.map((l) => ({
           data: l.data,
@@ -196,6 +208,7 @@ export function ImportarClient({
             : l.descricao,
           categoria: l.categoria || undefined,
           idExterno: l.idExterno,
+          tipoId: l.tipoId,
         })),
       });
       if (result.success) {
@@ -338,8 +351,8 @@ export function ImportarClient({
               tipoEntradaId={tipoEntradaId}
               tipoSaidaId={tipoSaidaId}
               contaId={contaId}
-              onTipoEntrada={setTipoEntradaId}
-              onTipoSaida={setTipoSaidaId}
+              onTipoEntrada={handleSetTipoEntrada}
+              onTipoSaida={handleSetTipoSaida}
               onConta={setContaId}
               disabled={isPending}
             />
@@ -351,8 +364,8 @@ export function ImportarClient({
               tipoSaidaId={tipoSaidaId}
               tipoEntradaId={tipoEntradaId}
               cartaoId={cartaoId}
-              onTipoSaida={setTipoSaidaId}
-              onTipoEntrada={setTipoEntradaId}
+              onTipoSaida={handleSetTipoSaida}
+              onTipoEntrada={handleSetTipoEntrada}
               onCartao={setCartaoId}
               disabled={isPending}
               temEstorno={linhasCartao.some((l) => l.isEntrada)}
@@ -387,6 +400,7 @@ export function ImportarClient({
                     {modo === "cartao" && (
                       <th className="px-3 py-2.5 text-center font-medium">Parcela</th>
                     )}
+                    <th className="px-3 py-2.5 text-left font-medium">Tipo</th>
                     <th className="px-3 py-2.5 text-left font-medium">Categoria</th>
                     <th className="px-3 py-2.5 text-right font-medium">Valor</th>
                   </tr>
@@ -397,6 +411,7 @@ export function ImportarClient({
                         <LinhaContaRow
                           key={l.idExterno}
                           linha={l}
+                          tipos={tipos}
                           categorias={categorias}
                           isPending={isPending}
                           onChange={(patch) =>
@@ -408,6 +423,7 @@ export function ImportarClient({
                         <LinhaCartaoRow
                           key={l.idExterno}
                           linha={l}
+                          tipos={tipos}
                           categorias={categorias}
                           isPending={isPending}
                           onChange={(patch) =>
@@ -467,14 +483,14 @@ function ConfigConta({
   return (
     <div className="grid grid-cols-1 gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-3">
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="tipoEntrada">Tipo para entradas</Label>
+        <Label htmlFor="tipoEntrada">Tipo padrão para entradas</Label>
         <select id="tipoEntrada" value={tipoEntradaId || ""} onChange={(e) => onTipoEntrada(Number(e.target.value) || 0)} disabled={disabled} className={selectClass}>
           <option value="">Selecione...</option>
           {tiposEntrada.map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
         </select>
       </div>
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="tipoSaida">Tipo para saídas</Label>
+        <Label htmlFor="tipoSaida">Tipo padrão para saídas</Label>
         <select id="tipoSaida" value={tipoSaidaId || ""} onChange={(e) => onTipoSaida(Number(e.target.value) || 0)} disabled={disabled} className={selectClass}>
           <option value="">Selecione...</option>
           {tiposSaida.map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
@@ -513,7 +529,7 @@ function ConfigCartao({
   return (
     <div className="grid grid-cols-1 gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-3">
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="tipoGasto">Tipo para gastos *</Label>
+        <Label htmlFor="tipoGasto">Tipo padrão para gastos *</Label>
         <select id="tipoGasto" value={tipoSaidaId || ""} onChange={(e) => onTipoSaida(Number(e.target.value) || 0)} disabled={disabled} className={selectClass}>
           <option value="">Selecione...</option>
           {tiposSaida.map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
@@ -521,7 +537,7 @@ function ConfigCartao({
       </div>
       {temEstorno && (
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="tipoEstorno">Tipo para estornos</Label>
+          <Label htmlFor="tipoEstorno">Tipo padrão para estornos</Label>
           <select id="tipoEstorno" value={tipoEntradaId || ""} onChange={(e) => onTipoEntrada(Number(e.target.value) || 0)} disabled={disabled} className={selectClass}>
             <option value="">Selecione...</option>
             {tiposEntrada.map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
@@ -542,9 +558,10 @@ function ConfigCartao({
 // ─── Linha da tabela — conta ──────────────────────────────────────────────────
 
 function LinhaContaRow({
-  linha: l, categorias, isPending, onChange,
+  linha: l, tipos, categorias, isPending, onChange,
 }: {
   linha: LinhaContaPreview;
+  tipos: TipoMovimentacaoRow[];
   categorias: CategoriaRow[];
   isPending: boolean;
   onChange: (patch: Partial<LinhaContaPreview>) => void;
@@ -571,6 +588,9 @@ function LinhaContaRow({
         {l.descricao}
       </td>
       <td className="px-3 py-2">
+        <TipoSelect linha={l} tipos={tipos} disabled={isPending} onChange={onChange} />
+      </td>
+      <td className="px-3 py-2">
         <CategoriaSelect linha={l} categorias={categorias} disabled={isPending} onChange={onChange} />
       </td>
       <td className={cn("whitespace-nowrap px-3 py-2 text-right font-semibold tabular-nums",
@@ -585,9 +605,10 @@ function LinhaContaRow({
 // ─── Linha da tabela — cartão ─────────────────────────────────────────────────
 
 function LinhaCartaoRow({
-  linha: l, categorias, isPending, onChange,
+  linha: l, tipos, categorias, isPending, onChange,
 }: {
   linha: LinhaCartaoPreview;
+  tipos: TipoMovimentacaoRow[];
   categorias: CategoriaRow[];
   isPending: boolean;
   onChange: (patch: Partial<LinhaCartaoPreview>) => void;
@@ -613,7 +634,6 @@ function LinhaCartaoRow({
         </span>
         {l.descricao}
       </td>
-      {/* Coluna parcela */}
       <td className="px-3 py-2 text-center">
         {l.parcela && l.totalParcelas ? (
           <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-[11px] font-medium text-blue-700 dark:text-blue-400">
@@ -624,6 +644,9 @@ function LinhaCartaoRow({
         )}
       </td>
       <td className="px-3 py-2">
+        <TipoSelect linha={l} tipos={tipos} disabled={isPending} onChange={onChange} />
+      </td>
+      <td className="px-3 py-2">
         <CategoriaSelect linha={l} categorias={categorias} disabled={isPending} onChange={onChange} />
       </td>
       <td className={cn("whitespace-nowrap px-3 py-2 text-right font-semibold tabular-nums",
@@ -632,6 +655,30 @@ function LinhaCartaoRow({
         {l.isEntrada ? "+" : "−"}{formatCurrency(l.valor)}
       </td>
     </tr>
+  );
+}
+
+// ─── Select de tipo (por linha) ───────────────────────────────────────────────
+
+function TipoSelect({
+  linha, tipos, disabled, onChange,
+}: {
+  linha: { jaImportada: boolean; isEntrada: boolean; tipoId: number };
+  tipos: TipoMovimentacaoRow[];
+  disabled: boolean;
+  onChange: (patch: { tipoId: number }) => void;
+}) {
+  const tiposFiltrados = tipos.filter((t) => t.isEntrada === linha.isEntrada);
+  return (
+    <select
+      value={linha.tipoId || ""}
+      disabled={linha.jaImportada || disabled}
+      onChange={(e) => onChange({ tipoId: Number(e.target.value) || 0 })}
+      className="h-7 w-36 rounded-md border border-input bg-transparent px-1.5 text-xs text-muted-foreground outline-none focus:border-ring dark:bg-input/30"
+    >
+      <option value="">Sem tipo</option>
+      {tiposFiltrados.map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
+    </select>
   );
 }
 

@@ -7,11 +7,10 @@ export const importacaoItemSchema = z.object({
   descricao: z.string().min(1).max(200),
   categoria: z.string().max(100).optional(),
   idExterno: z.string().min(1).max(150),
+  tipoId: z.number().int().min(1),
 });
 
 export const importacaoSchema = z.object({
-  tipoEntradaId: z.number().int().min(1, "Selecione o tipo para entradas"),
-  tipoSaidaId: z.number().int().min(1, "Selecione o tipo para saídas"),
   contaId: z.number().int().optional(),
   itens: z.array(importacaoItemSchema).min(1, "Nenhuma transação selecionada").max(1000),
 });

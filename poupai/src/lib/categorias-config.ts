@@ -15,6 +15,8 @@ import {
   Receipt,
   MinusCircle,
   Tag,
+  Fuel,
+  Baby,
   type LucideIcon,
 } from "lucide-react";
 
@@ -41,6 +43,8 @@ export const ICONES_DISPONIVEIS: IconOption[] = [
   { key: "receipt", label: "Impostos", icon: Receipt },
   { key: "minus-circle", label: "Menos", icon: MinusCircle },
   { key: "tag", label: "Tag", icon: Tag },
+  { key: "fuel", label: "Combustível", icon: Fuel },
+  { key: "baby", label: "Filhos", icon: Baby },
 ];
 
 export const CORES_DISPONIVEIS = [
