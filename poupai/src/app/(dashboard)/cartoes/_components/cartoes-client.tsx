@@ -17,6 +17,7 @@ import { MigrarCartaoDialog } from "./migrar-cartao-dialog";
 
 const statusBadge: Record<string, string> = {
   paga: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
+  parcial: "bg-violet-500/15 text-violet-700 dark:text-violet-400",
   aberta: "bg-blue-500/15 text-blue-700 dark:text-blue-400",
   fechada: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
   futura: "bg-foreground/8 text-muted-foreground",
@@ -24,6 +25,7 @@ const statusBadge: Record<string, string> = {
 
 const statusLabel: Record<string, string> = {
   paga: "Paga",
+  parcial: "Parcialmente paga",
   aberta: "Aberta",
   fechada: "Fechada",
   futura: "Futura",

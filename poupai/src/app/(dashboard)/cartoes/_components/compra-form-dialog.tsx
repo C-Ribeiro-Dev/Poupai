@@ -2,8 +2,9 @@
 import { useEffect, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, ShoppingCart } from "lucide-react";
+import { Loader2, ShoppingCart, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,11 +39,12 @@ export function CompraFormDialog({ open, onOpenChange, cartao, categorias }: Com
 
   const form = useForm<CompraCartaoFormData>({
     resolver: zodResolver(compraCartaoSchema),
-    defaultValues: { descricao: "", categoria: "", responsavel: "", parcelas: 1, dataCompra: todayStr() },
+    defaultValues: { descricao: "", categoria: "", responsavel: "", recorrente: false, parcelas: 1, dataCompra: todayStr() },
   });
 
   const valorTotal = form.watch("valorTotal");
   const parcelas = form.watch("parcelas");
+  const recorrente = form.watch("recorrente");
 
   useEffect(() => {
     if (open) {
@@ -50,6 +52,7 @@ export function CompraFormDialog({ open, onOpenChange, cartao, categorias }: Com
         descricao: "",
         categoria: "",
         responsavel: "",
+        recorrente: false,
         valorTotal: undefined as unknown as number,
         parcelas: 1,
         dataCompra: todayStr(),
@@ -71,7 +74,7 @@ export function CompraFormDialog({ open, onOpenChange, cartao, categorias }: Com
   }
 
   const valorParcelaPreview =
-    valorTotal > 0 && parcelas > 1 ? valorTotal / parcelas : null;
+    !recorrente && valorTotal > 0 && parcelas > 1 ? valorTotal / parcelas : null;
 
   return (
     <Dialog open={open} onOpenChange={isPending ? undefined : onOpenChange}>
@@ -88,11 +91,44 @@ export function CompraFormDialog({ open, onOpenChange, cartao, categorias }: Com
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
+          {/* Tipo: compra única ou recorrente */}
+          <div className="grid grid-cols-2 overflow-hidden rounded-lg border border-input">
+            <button
+              type="button"
+              disabled={isPending}
+              onClick={() => form.setValue("recorrente", false)}
+              className={cn(
+                "py-2 text-sm font-medium transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+                !recorrente
+                  ? "bg-blue-500/15 text-blue-700 dark:text-blue-400"
+                  : "text-muted-foreground hover:bg-muted"
+              )}
+            >
+              Compra única
+            </button>
+            <button
+              type="button"
+              disabled={isPending}
+              onClick={() => form.setValue("recorrente", true)}
+              className={cn(
+                "flex items-center justify-center gap-1.5 border-l border-input py-2 text-sm font-medium transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+                recorrente
+                  ? "bg-violet-500/15 text-violet-700 dark:text-violet-400"
+                  : "text-muted-foreground hover:bg-muted"
+              )}
+            >
+              <RefreshCw className="size-3.5" />
+              Assinatura / Recorrente
+            </button>
+          </div>
+
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="descricao">Descrição</Label>
             <Input
               id="descricao"
-              placeholder="Ex: Mercado, Tênis, Passagem aérea"
+              placeholder="Ex: Netflix, Mercado, Tênis"
               aria-invalid={!!form.formState.errors.descricao}
               disabled={isPending}
               {...form.register("descricao")}
@@ -102,9 +138,11 @@ export function CompraFormDialog({ open, onOpenChange, cartao, categorias }: Com
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className={cn("grid gap-3", recorrente ? "grid-cols-1" : "grid-cols-2")}>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="valorTotal">Valor total (R$)</Label>
+              <Label htmlFor="valorTotal">
+                {recorrente ? "Valor mensal (R$)" : "Valor total (R$)"}
+              </Label>
               <Input
                 id="valorTotal"
                 type="number"
@@ -121,32 +159,40 @@ export function CompraFormDialog({ open, onOpenChange, cartao, categorias }: Com
                 </p>
               )}
             </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="parcelas">Parcelas</Label>
-              <Input
-                id="parcelas"
-                type="number"
-                min="1"
-                max="48"
-                aria-invalid={!!form.formState.errors.parcelas}
-                disabled={isPending}
-                {...form.register("parcelas", {
-                  setValueAs: (v: unknown) => {
-                    const n = parseInt(String(v), 10);
-                    return isNaN(n) ? 1 : n;
-                  },
-                })}
-              />
-              {valorParcelaPreview && (
-                <p className="text-xs text-muted-foreground">
-                  {parcelas}x de {formatCurrency(valorParcelaPreview)}
-                </p>
-              )}
-              {form.formState.errors.parcelas && (
-                <p className="text-xs text-destructive">{form.formState.errors.parcelas.message}</p>
-              )}
-            </div>
+            {!recorrente && (
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="parcelas">Parcelas</Label>
+                <Input
+                  id="parcelas"
+                  type="number"
+                  min="1"
+                  max="48"
+                  aria-invalid={!!form.formState.errors.parcelas}
+                  disabled={isPending}
+                  {...form.register("parcelas", {
+                    setValueAs: (v: unknown) => {
+                      const n = parseInt(String(v), 10);
+                      return isNaN(n) ? 1 : n;
+                    },
+                  })}
+                />
+                {valorParcelaPreview && (
+                  <p className="text-xs text-muted-foreground">
+                    {parcelas}x de {formatCurrency(valorParcelaPreview)}
+                  </p>
+                )}
+                {form.formState.errors.parcelas && (
+                  <p className="text-xs text-destructive">{form.formState.errors.parcelas.message}</p>
+                )}
+              </div>
+            )}
           </div>
+
+          {recorrente && (
+            <p className="rounded-lg bg-violet-500/10 px-3 py-2 text-xs text-violet-700 dark:text-violet-400">
+              Essa cobrança aparecerá automaticamente em todas as faturas a partir deste mês. Para cancelar, exclua a compra.
+            </p>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">

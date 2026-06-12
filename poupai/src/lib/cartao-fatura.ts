@@ -63,7 +63,7 @@ export function valorParcela(valorTotal: number, parcelas: number, indice: numbe
   return base;
 }
 
-export type FaturaStatus = "paga" | "aberta" | "fechada" | "futura";
+export type FaturaStatus = "paga" | "parcial" | "aberta" | "fechada" | "futura";
 
 export function getFaturaStatus(
   mesRefStr: string,

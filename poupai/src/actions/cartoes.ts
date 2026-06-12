@@ -104,8 +104,9 @@ export async function createCompraCartaoAction(
       descricao: parsed.data.descricao,
       categoria: parsed.data.categoria || null,
       responsavel: parsed.data.responsavel || null,
+      recorrente: parsed.data.recorrente ?? false,
       valorTotal: parsed.data.valorTotal,
-      parcelas: parsed.data.parcelas,
+      parcelas: parsed.data.recorrente ? 1 : parsed.data.parcelas,
       dataCompra: toNoonUTC(parsed.data.dataCompra),
     },
   });
@@ -156,11 +157,7 @@ export async function pagarFaturaAction(
       });
       if (!tipo) throw new Error("Tipo de movimentação não encontrado.");
 
-      const jaPaga = await tx.faturaPagamento.findFirst({
-        where: { cartaoId, mesRef },
-        select: { id: true },
-      });
-      if (jaPaga) throw new Error("Esta fatura já foi paga.");
+      if (valor <= 0) throw new Error("Valor do pagamento inválido.");
 
       const now = new Date();
       const dataNoon = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0);
@@ -275,6 +272,7 @@ export async function desfazerPagamentoFaturaAction(
     await prisma.$transaction(async (tx) => {
       const pagamento = await tx.faturaPagamento.findFirst({
         where: { cartaoId, mesRef, userId },
+        orderBy: { createdAt: "desc" },
         select: { id: true, movimentacaoId: true },
       });
       if (!pagamento) throw new Error("Pagamento não encontrado.");

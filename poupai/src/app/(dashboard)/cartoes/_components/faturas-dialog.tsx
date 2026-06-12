@@ -8,11 +8,13 @@ import {
   Undo2,
   Trash2,
   Receipt,
+  RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -32,6 +34,7 @@ import {
 
 const statusBadge: Record<string, string> = {
   paga: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
+  parcial: "bg-violet-500/15 text-violet-700 dark:text-violet-400",
   aberta: "bg-blue-500/15 text-blue-700 dark:text-blue-400",
   fechada: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
   futura: "bg-foreground/8 text-muted-foreground",
@@ -39,6 +42,7 @@ const statusBadge: Record<string, string> = {
 
 const statusLabel: Record<string, string> = {
   paga: "Paga",
+  parcial: "Parcialmente paga",
   aberta: "Aberta",
   fechada: "Fechada",
   futura: "Futura",
@@ -54,6 +58,7 @@ interface FaturasDialogProps {
 export function FaturasDialog({ open, onOpenChange, cartao, tipos }: FaturasDialogProps) {
   const [indice, setIndice] = useState(0);
   const [tipoId, setTipoId] = useState(0);
+  const [valorPagamento, setValorPagamento] = useState(0);
   const [isPending, startTransition] = useTransition();
 
   const faturas = cartao?.faturas ?? [];
@@ -61,7 +66,6 @@ export function FaturasDialog({ open, onOpenChange, cartao, tipos }: FaturasDial
 
   useEffect(() => {
     if (open && cartao) {
-      // Abre na fatura atual (ou na primeira não paga)
       const atualIdx = cartao.faturaAtual
         ? cartao.faturas.findIndex((f) => f.mesRef === cartao.faturaAtual!.mesRef)
         : 0;
@@ -71,6 +75,15 @@ export function FaturasDialog({ open, onOpenChange, cartao, tipos }: FaturasDial
   }, [open, cartao]);
 
   const fatura = faturas[indice];
+  const restante = fatura ? Math.max(0, Math.round((fatura.total - fatura.totalPago) * 100) / 100) : 0;
+
+  // Atualiza o valor de pagamento sugerido quando muda de fatura
+  useEffect(() => {
+    if (fatura) {
+      setValorPagamento(restante);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fatura?.mesRef, fatura?.total, fatura?.totalPago]);
 
   function handlePagar() {
     if (!cartao || !fatura) return;
@@ -78,12 +91,23 @@ export function FaturasDialog({ open, onOpenChange, cartao, tipos }: FaturasDial
       toast.error("Selecione o tipo de movimentação para registrar o pagamento.");
       return;
     }
+    if (!valorPagamento || valorPagamento <= 0) {
+      toast.error("Informe um valor válido.");
+      return;
+    }
+    if (valorPagamento > restante + 0.005) {
+      toast.error(`O valor não pode ser maior que o restante (${formatCurrency(restante)}).`);
+      return;
+    }
     startTransition(async () => {
-      const result = await pagarFaturaAction(cartao.id, fatura.mesRef, fatura.total, tipoId);
+      const result = await pagarFaturaAction(cartao.id, fatura.mesRef, valorPagamento, tipoId);
       if (result.success) {
-        toast.success("Fatura paga com sucesso.", {
-          description: "Movimentação criada em Movimentações.",
-        });
+        toast.success(
+          valorPagamento >= restante - 0.005
+            ? "Fatura paga com sucesso."
+            : `Abatimento de ${formatCurrency(valorPagamento)} registrado.`,
+          { description: "Movimentação criada em Movimentações." }
+        );
         onOpenChange(false);
       } else {
         toast.error(result.error);
@@ -96,7 +120,7 @@ export function FaturasDialog({ open, onOpenChange, cartao, tipos }: FaturasDial
     startTransition(async () => {
       const result = await desfazerPagamentoFaturaAction(cartao.id, fatura.mesRef);
       if (result.success) {
-        toast.success("Pagamento desfeito.");
+        toast.success("Último pagamento desfeito.");
         onOpenChange(false);
       } else {
         toast.error(result.error);
@@ -117,6 +141,8 @@ export function FaturasDialog({ open, onOpenChange, cartao, tipos }: FaturasDial
   }
 
   if (!cartao) return null;
+
+  const podePagar = fatura && !fatura.paga && fatura.total > 0 && fatura.status !== "futura";
 
   return (
     <Dialog open={open} onOpenChange={isPending ? undefined : onOpenChange}>
@@ -150,7 +176,7 @@ export function FaturasDialog({ open, onOpenChange, cartao, tipos }: FaturasDial
                   )}
                 >
                   {statusLabel[fatura.status]}
-                  {!fatura.paga && ` · vence ${formatDate(fatura.vencimento)}`}
+                  {!fatura.paga && fatura.status !== "futura" && ` · vence ${formatDate(fatura.vencimento)}`}
                 </span>
               </div>
               <Button
@@ -168,6 +194,17 @@ export function FaturasDialog({ open, onOpenChange, cartao, tipos }: FaturasDial
             <div className="rounded-lg border border-border bg-muted/30 px-4 py-3 text-center">
               <p className="text-xs text-muted-foreground">Total da fatura</p>
               <p className="text-2xl font-bold tabular-nums">{formatCurrency(fatura.total)}</p>
+              {fatura.totalPago > 0 && !fatura.paga && (
+                <div className="mt-1 flex items-center justify-center gap-3 text-xs">
+                  <span className="text-violet-600 dark:text-violet-400">
+                    Pago: {formatCurrency(fatura.totalPago)}
+                  </span>
+                  <span className="text-muted-foreground">·</span>
+                  <span className="font-medium text-foreground">
+                    Restante: {formatCurrency(restante)}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Itens */}
@@ -176,10 +213,13 @@ export function FaturasDialog({ open, onOpenChange, cartao, tipos }: FaturasDial
                 {fatura.itens.map((item, idx) => (
                   <div key={`${item.compraId}-${idx}`} className="group flex items-center gap-3 px-3.5 py-2.5">
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">
+                      <p className="flex items-center gap-1.5 truncate text-sm font-medium">
+                        {item.recorrente && (
+                          <RefreshCw className="size-3 shrink-0 text-violet-500" />
+                        )}
                         {item.descricao}
-                        {item.totalParcelas > 1 && (
-                          <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                        {!item.recorrente && item.totalParcelas > 1 && (
+                          <span className="text-xs font-normal text-muted-foreground">
                             {item.parcelaNum}/{item.totalParcelas}
                           </span>
                         )}
@@ -191,7 +231,7 @@ export function FaturasDialog({ open, onOpenChange, cartao, tipos }: FaturasDial
                           </span>
                         ) : null}
                         {item.categoria ? `${item.categoria} · ` : ""}
-                        compra em {formatDate(item.dataCompra)}
+                        {item.recorrente ? "assinatura mensal" : `compra em ${formatDate(item.dataCompra)}`}
                       </p>
                     </div>
                     <span className="shrink-0 text-sm font-semibold tabular-nums">
@@ -215,25 +255,50 @@ export function FaturasDialog({ open, onOpenChange, cartao, tipos }: FaturasDial
             </div>
 
             {/* Pagamento */}
-            {!fatura.paga && fatura.total > 0 && fatura.status !== "futura" && (
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="tipoPagamento">Tipo de movimentação do pagamento</Label>
-                <select
-                  id="tipoPagamento"
-                  value={tipoId || ""}
-                  onChange={(e) => setTipoId(Number(e.target.value) || 0)}
-                  disabled={isPending}
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <option value="">Selecione o tipo (saída)...</option>
-                  {tiposSaida.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.nome}
-                    </option>
-                  ))}
-                </select>
+            {podePagar && (
+              <div className="flex flex-col gap-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="valorPagamento">
+                      Valor a pagar (R$)
+                    </Label>
+                    <Input
+                      id="valorPagamento"
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      max={restante}
+                      value={valorPagamento || ""}
+                      onChange={(e) => setValorPagamento(Number(e.target.value) || 0)}
+                      disabled={isPending}
+                    />
+                    {fatura.totalPago === 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        Total: {formatCurrency(fatura.total)}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="tipoPagamento">Tipo de movimentação</Label>
+                    <select
+                      id="tipoPagamento"
+                      value={tipoId || ""}
+                      onChange={(e) => setTipoId(Number(e.target.value) || 0)}
+                      disabled={isPending}
+                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <option value="">Selecione o tipo (saída)...</option>
+                      {tiposSaida.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.nome}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  Ao pagar, uma movimentação de saída é criada automaticamente.
+                  Ao registrar, uma movimentação de saída é criada automaticamente.
+                  {restante < fatura.total && ` Restante: ${formatCurrency(restante)}`}
                 </p>
               </div>
             )}
@@ -242,32 +307,32 @@ export function FaturasDialog({ open, onOpenChange, cartao, tipos }: FaturasDial
               <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
                 Fechar
               </Button>
-              {fatura.paga ? (
+              {fatura.totalPago > 0 && (
                 <Button variant="outline" onClick={handleDesfazer} disabled={isPending}>
                   {isPending ? (
                     <Loader2 className="size-4 animate-spin" />
                   ) : (
                     <Undo2 className="size-4" />
                   )}
-                  Desfazer pagamento
+                  Desfazer último pagamento
                 </Button>
-              ) : (
-                fatura.total > 0 &&
-                fatura.status !== "futura" && (
-                  <Button onClick={handlePagar} disabled={isPending}>
-                    {isPending ? (
-                      <>
-                        <Loader2 className="size-4 animate-spin" />
-                        Pagando...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle2 className="size-4" />
-                        Pagar {formatCurrency(fatura.total)}
-                      </>
-                    )}
-                  </Button>
-                )
+              )}
+              {podePagar && (
+                <Button onClick={handlePagar} disabled={isPending}>
+                  {isPending ? (
+                    <>
+                      <Loader2 className="size-4 animate-spin" />
+                      Registrando...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="size-4" />
+                      {valorPagamento >= restante - 0.005
+                        ? `Pagar ${formatCurrency(valorPagamento || restante)}`
+                        : `Abater ${formatCurrency(valorPagamento || 0)}`}
+                    </>
+                  )}
+                </Button>
               )}
             </DialogFooter>
           </div>

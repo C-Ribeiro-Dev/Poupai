@@ -184,6 +184,7 @@ model CompraCartao {
   descricao   String
   categoria   String?
   responsavel String?
+  recorrente  Boolean  @default(false)
   valorTotal  Decimal  @db.Decimal(18, 2)
   parcelas    Int      @default(1)
   dataCompra  DateTime

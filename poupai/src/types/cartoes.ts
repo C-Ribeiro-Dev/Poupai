@@ -24,6 +24,7 @@ export const compraCartaoSchema = z.object({
   descricao: z.string().min(1, "Descrição é obrigatória").max(200),
   categoria: z.string().max(100).optional(),
   responsavel: z.string().max(100).optional(),
+  recorrente: z.boolean(),
   valorTotal: z
     .number({ message: "Informe um valor válido" })
     .min(0.01, "O valor deve ser maior que zero")
@@ -39,6 +40,7 @@ export interface FaturaItem {
   descricao: string;
   categoria: string | null;
   responsavel: string | null;
+  recorrente: boolean;
   dataCompra: Date;
   parcelaNum: number;
   totalParcelas: number;
@@ -48,6 +50,7 @@ export interface FaturaItem {
 export interface FaturaResumo {
   mesRef: string;
   total: number;
+  totalPago: number;
   paga: boolean;
   status: FaturaStatus;
   vencimento: Date;
