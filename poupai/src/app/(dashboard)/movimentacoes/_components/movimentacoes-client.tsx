@@ -19,8 +19,10 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { MovimentacaoFormDialog } from "./movimentacao-form-dialog";
 import { DeleteMovimentacaoDialog } from "./delete-movimentacao-dialog";
+import { BatchDeleteDialog } from "./batch-delete-dialog";
 import { MovimentacaoDetailDialog } from "./movimentacao-detail-dialog";
 import type { MovimentacaoRow } from "@/types/movimentacoes";
 import type { TipoMovimentacaoRow } from "@/types/tipos";
@@ -184,6 +186,8 @@ export function MovimentacoesClient({
   const [editItem, setEditItem] = useState<MovimentacaoRow | null>(null);
   const [deleteItem, setDeleteItem] = useState<MovimentacaoRow | null>(null);
   const [detailItem, setDetailItem] = useState<MovimentacaoRow | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
 
   // Categorias disponíveis para o filtro: cadastradas + legadas presentes nos dados
   const categoriaOptions = useMemo(() => {
@@ -248,6 +252,35 @@ export function MovimentacoesClient({
       field,
       order: prev.field === field && prev.order === "asc" ? "desc" : "asc",
     }));
+  }
+
+  const allFilteredSelected =
+    filtered.length > 0 && filtered.every((m) => selectedIds.has(m.id));
+  const someFilteredSelected = filtered.some((m) => selectedIds.has(m.id));
+
+  function toggleSelectAll() {
+    if (allFilteredSelected) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        filtered.forEach((m) => next.delete(m.id));
+        return next;
+      });
+    } else {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        filtered.forEach((m) => next.add(m.id));
+        return next;
+      });
+    }
+  }
+
+  function toggleSelectOne(id: number) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   }
 
   return (
@@ -409,12 +442,48 @@ export function MovimentacoesClient({
         </div>
       </div>
 
+      {/* Batch action bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center justify-between rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-2.5">
+          <span className="text-sm font-medium text-destructive">
+            {selectedIds.size} {selectedIds.size === 1 ? "item selecionado" : "itens selecionados"}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedIds(new Set())}
+              className="h-7 text-xs"
+            >
+              Limpar seleção
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setBatchDeleteOpen(true)}
+              className="h-7 text-xs"
+            >
+              <Trash2 className="size-3.5" />
+              Excluir selecionados
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Table */}
       <div className="overflow-hidden rounded-xl ring-1 ring-foreground/10">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-muted/40">
               <tr>
+                <th className="w-10 px-3 py-2.5">
+                  <Checkbox
+                    checked={allFilteredSelected}
+                    indeterminate={someFilteredSelected && !allFilteredSelected}
+                    onCheckedChange={toggleSelectAll}
+                    aria-label="Selecionar todos"
+                  />
+                </th>
                 <th className="px-4 py-2.5 text-left">
                   <SortButton field="data" label="Data" sort={sort} onSort={toggleSort} />
                 </th>
@@ -429,13 +498,13 @@ export function MovimentacoesClient({
                     <SortButton field="valor" label="Valor" sort={sort} onSort={toggleSort} />
                   </div>
                 </th>
-                <th className="w-24 px-4 py-2.5" />
+                <th className="w-28 px-4 py-2.5" />
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5}>
+                  <td colSpan={6}>
                     <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
                       <Scale className="size-9 text-muted-foreground/30" />
                       <p className="text-sm font-medium text-muted-foreground">
@@ -457,7 +526,15 @@ export function MovimentacoesClient({
                 </tr>
               ) : (
                 filtered.map((m) => (
-                  <tr key={m.id} className="group/row transition-colors hover:bg-muted/30">
+                  <tr key={m.id} className={cn("group/row transition-colors hover:bg-muted/30", selectedIds.has(m.id) && "bg-muted/50")}>
+                    {/* Checkbox */}
+                    <td className="px-3 py-3">
+                      <Checkbox
+                        checked={selectedIds.has(m.id)}
+                        onCheckedChange={() => toggleSelectOne(m.id)}
+                        aria-label="Selecionar movimentação"
+                      />
+                    </td>
                     {/* Date */}
                     <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
                       {formatDate(m.data)}
@@ -604,6 +681,13 @@ export function MovimentacoesClient({
           if (!isOpen) setDetailItem(null);
         }}
         movimentacao={detailItem}
+      />
+      <BatchDeleteDialog
+        open={batchDeleteOpen}
+        onOpenChange={setBatchDeleteOpen}
+        ids={[...selectedIds]}
+        onSuccess={() => setSelectedIds(new Set())}
+        isAdmin={isAdmin}
       />
     </div>
   );

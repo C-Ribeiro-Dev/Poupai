@@ -111,6 +111,32 @@ export async function deleteMovimentacaoAction(
   return { success: true };
 }
 
+export async function batchDeleteMovimentacaoAction(
+  ids: number[]
+): Promise<MovimentacaoActionResult> {
+  if (!ids.length) return { success: false, error: "Nenhum item selecionado." };
+  const userId = await getCurrentUserId();
+  await prisma.movimentacao.updateMany({
+    where: { id: { in: ids }, userId, isDeleted: false },
+    data: { isDeleted: true },
+  });
+  revalidatePath("/movimentacoes");
+  return { success: true };
+}
+
+export async function batchHardDeleteMovimentacaoAction(
+  ids: number[]
+): Promise<MovimentacaoActionResult> {
+  if (!ids.length) return { success: false, error: "Nenhum item selecionado." };
+  const user = await getCurrentUser();
+  if (!isAdminEmail(user?.email)) {
+    return { success: false, error: "Acesso restrito ao administrador." };
+  }
+  await prisma.movimentacao.deleteMany({ where: { id: { in: ids } } });
+  revalidatePath("/movimentacoes");
+  return { success: true };
+}
+
 export async function hardDeleteMovimentacaoAction(
   id: number
 ): Promise<MovimentacaoActionResult> {
