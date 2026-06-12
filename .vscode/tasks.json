@@ -6,7 +6,7 @@
       "type": "shell",
       "command": "npm run build",
       "options": {
-        "cwd": "${workspaceFolder}/poupai-v2"
+        "cwd": "${workspaceFolder}/poupai"
       },
       "group": {
         "kind": "build",
@@ -18,7 +18,7 @@
       "type": "shell",
       "command": "npm run dev",
       "options": {
-        "cwd": "${workspaceFolder}/poupai-v2"
+        "cwd": "${workspaceFolder}/poupai"
       },
       "isBackground": true
     }
