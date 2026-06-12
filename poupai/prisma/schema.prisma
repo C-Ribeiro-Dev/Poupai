@@ -208,7 +208,7 @@ model FaturaPagamento {
   movimentacaoId Int?
   createdAt      DateTime @default(now())
 
-  @@unique([cartaoId, mesRef])
+  @@index([cartaoId, mesRef])
   @@index([userId])
   @@map("faturas_pagamento")
 }
