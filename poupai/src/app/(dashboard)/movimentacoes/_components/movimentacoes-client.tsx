@@ -161,6 +161,7 @@ interface MovimentacoesClientProps {
   tipos: TipoMovimentacaoRow[];
   categorias: CategoriaRow[];
   initialSearch?: string;
+  isAdmin?: boolean;
 }
 
 export function MovimentacoesClient({
@@ -168,6 +169,7 @@ export function MovimentacoesClient({
   tipos,
   categorias,
   initialSearch,
+  isAdmin,
 }: MovimentacoesClientProps) {
   // Com busca vinda da URL (busca global), inicia em "Tudo" para não esconder resultados antigos
   const [period, setPeriod] = useState<PeriodPreset>(initialSearch ? "all" : "month");
@@ -594,6 +596,7 @@ export function MovimentacoesClient({
           if (!isOpen) setDeleteItem(null);
         }}
         movimentacao={deleteItem}
+        isAdmin={isAdmin}
       />
       <MovimentacaoDetailDialog
         open={!!detailItem}

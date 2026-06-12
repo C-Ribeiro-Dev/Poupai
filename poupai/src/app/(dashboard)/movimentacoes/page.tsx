@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { getCurrentUserId } from "@/lib/auth";
+import { getCurrentUser, getCurrentUserId } from "@/lib/auth";
+import { isAdminEmail } from "@/lib/admin";
 import { getMovimentacoes } from "@/services/movimentacoes";
 import { getTiposMovimentacao } from "@/services/tipos";
 import { getCategorias } from "@/services/categorias";
@@ -12,7 +13,8 @@ export default async function MovimentacoesPage({
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
-  const userId = await getCurrentUserId();
+  const [userId, user] = await Promise.all([getCurrentUserId(), getCurrentUser()]);
+  const isAdmin = isAdminEmail(user?.email);
   const [{ q }, movimentacoes, tipos, categorias] = await Promise.all([
     searchParams,
     getMovimentacoes(userId),
@@ -25,6 +27,7 @@ export default async function MovimentacoesPage({
       tipos={tipos}
       categorias={categorias}
       initialSearch={q}
+      isAdmin={isAdmin}
     />
   );
 }

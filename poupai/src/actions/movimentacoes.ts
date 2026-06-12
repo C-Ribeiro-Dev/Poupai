@@ -1,6 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
-import { getCurrentUserId } from "@/lib/auth";
+import { getCurrentUser, getCurrentUserId } from "@/lib/auth";
+import { isAdminEmail } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 import { movimentacaoSchema, type MovimentacaoFormData } from "@/types/movimentacoes";
 
@@ -105,6 +106,28 @@ export async function deleteMovimentacaoAction(
     where: { id },
     data: { isDeleted: true },
   });
+
+  revalidatePath("/movimentacoes");
+  return { success: true };
+}
+
+export async function hardDeleteMovimentacaoAction(
+  id: number
+): Promise<MovimentacaoActionResult> {
+  const user = await getCurrentUser();
+  if (!isAdminEmail(user?.email)) {
+    return { success: false, error: "Acesso restrito ao administrador." };
+  }
+
+  const existing = await prisma.movimentacao.findFirst({
+    where: { id },
+    select: { id: true },
+  });
+  if (!existing) {
+    return { success: false, error: "Movimentação não encontrada." };
+  }
+
+  await prisma.movimentacao.delete({ where: { id } });
 
   revalidatePath("/movimentacoes");
   return { success: true };

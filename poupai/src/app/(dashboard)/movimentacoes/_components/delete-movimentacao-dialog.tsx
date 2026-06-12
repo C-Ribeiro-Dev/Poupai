@@ -11,28 +11,43 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { deleteMovimentacaoAction } from "@/actions/movimentacoes";
+import { deleteMovimentacaoAction, hardDeleteMovimentacaoAction } from "@/actions/movimentacoes";
 import type { MovimentacaoRow } from "@/types/movimentacoes";
 
 interface DeleteMovimentacaoDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   movimentacao: MovimentacaoRow | null;
+  isAdmin?: boolean;
 }
 
 export function DeleteMovimentacaoDialog({
   open,
   onOpenChange,
   movimentacao,
+  isAdmin,
 }: DeleteMovimentacaoDialogProps) {
   const [isPending, startTransition] = useTransition();
 
-  function handleConfirm() {
+  function handleSoftDelete() {
     if (!movimentacao) return;
     startTransition(async () => {
       const result = await deleteMovimentacaoAction(movimentacao.id);
       if (result.success) {
         toast.success("Movimentação excluída com sucesso.");
+        onOpenChange(false);
+      } else {
+        toast.error(result.error);
+      }
+    });
+  }
+
+  function handleHardDelete() {
+    if (!movimentacao) return;
+    startTransition(async () => {
+      const result = await hardDeleteMovimentacaoAction(movimentacao.id);
+      if (result.success) {
+        toast.success("Movimentação removida permanentemente.");
         onOpenChange(false);
       } else {
         toast.error(result.error);
@@ -59,7 +74,7 @@ export function DeleteMovimentacaoDialog({
             ? Esta ação não pode ser desfeita.
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter>
+        <DialogFooter className={isAdmin ? "flex-col gap-2 sm:flex-row" : undefined}>
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
@@ -67,7 +82,19 @@ export function DeleteMovimentacaoDialog({
           >
             Cancelar
           </Button>
-          <Button variant="destructive" onClick={handleConfirm} disabled={isPending}>
+          {isAdmin && (
+            <Button variant="outline" onClick={handleHardDelete} disabled={isPending}
+              className="border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            >
+              {isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Trash2 className="size-4" />
+              )}
+              Excluir permanentemente
+            </Button>
+          )}
+          <Button variant="destructive" onClick={handleSoftDelete} disabled={isPending}>
             {isPending ? (
               <>
                 <Loader2 className="size-4 animate-spin" />
