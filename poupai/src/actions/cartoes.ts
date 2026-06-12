@@ -103,6 +103,7 @@ export async function createCompraCartaoAction(
       cartaoId,
       descricao: parsed.data.descricao,
       categoria: parsed.data.categoria || null,
+      responsavel: parsed.data.responsavel || null,
       valorTotal: parsed.data.valorTotal,
       parcelas: parsed.data.parcelas,
       dataCompra: toNoonUTC(parsed.data.dataCompra),

@@ -23,6 +23,7 @@ export type CartaoFormData = z.infer<typeof cartaoSchema>;
 export const compraCartaoSchema = z.object({
   descricao: z.string().min(1, "Descrição é obrigatória").max(200),
   categoria: z.string().max(100).optional(),
+  responsavel: z.string().max(100).optional(),
   valorTotal: z
     .number({ message: "Informe um valor válido" })
     .min(0.01, "O valor deve ser maior que zero")
@@ -37,6 +38,7 @@ export interface FaturaItem {
   compraId: number;
   descricao: string;
   categoria: string | null;
+  responsavel: string | null;
   dataCompra: Date;
   parcelaNum: number;
   totalParcelas: number;

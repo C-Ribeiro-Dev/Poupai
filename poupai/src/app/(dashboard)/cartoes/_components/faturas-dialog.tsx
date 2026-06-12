@@ -185,6 +185,11 @@ export function FaturasDialog({ open, onOpenChange, cartao, tipos }: FaturasDial
                         )}
                       </p>
                       <p className="truncate text-xs text-muted-foreground">
+                        {item.responsavel ? (
+                          <span className="mr-1.5 rounded bg-amber-500/15 px-1 py-0.5 text-amber-700 dark:text-amber-400">
+                            {item.responsavel}
+                          </span>
+                        ) : null}
                         {item.categoria ? `${item.categoria} · ` : ""}
                         compra em {formatDate(item.dataCompra)}
                       </p>

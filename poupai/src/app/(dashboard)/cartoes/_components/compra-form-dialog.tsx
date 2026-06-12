@@ -38,7 +38,7 @@ export function CompraFormDialog({ open, onOpenChange, cartao, categorias }: Com
 
   const form = useForm<CompraCartaoFormData>({
     resolver: zodResolver(compraCartaoSchema),
-    defaultValues: { descricao: "", categoria: "", parcelas: 1, dataCompra: todayStr() },
+    defaultValues: { descricao: "", categoria: "", responsavel: "", parcelas: 1, dataCompra: todayStr() },
   });
 
   const valorTotal = form.watch("valorTotal");
@@ -49,6 +49,7 @@ export function CompraFormDialog({ open, onOpenChange, cartao, categorias }: Com
       form.reset({
         descricao: "",
         categoria: "",
+        responsavel: "",
         valorTotal: undefined as unknown as number,
         parcelas: 1,
         dataCompra: todayStr(),
@@ -172,6 +173,19 @@ export function CompraFormDialog({ open, onOpenChange, cartao, categorias }: Com
                 {...form.register("categoria")}
               />
             </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="responsavel">
+              Responsável pelo pagamento{" "}
+              <span className="text-xs font-normal text-muted-foreground">(opcional)</span>
+            </Label>
+            <Input
+              id="responsavel"
+              placeholder="Ex: João, Maria — deixe vazio se for você"
+              disabled={isPending}
+              {...form.register("responsavel")}
+            />
           </div>
 
           <DialogFooter>

@@ -17,6 +17,7 @@ import {
   Tag,
   Fuel,
   Baby,
+  Cat,
   type LucideIcon,
 } from "lucide-react";
 
@@ -45,6 +46,7 @@ export const ICONES_DISPONIVEIS: IconOption[] = [
   { key: "tag", label: "Tag", icon: Tag },
   { key: "fuel", label: "Combustível", icon: Fuel },
   { key: "baby", label: "Filhos", icon: Baby },
+  { key: "cat", label: "Gato", icon: Cat },
 ];
 
 export const CORES_DISPONIVEIS = [
