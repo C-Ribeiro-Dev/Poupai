@@ -69,3 +69,54 @@ export async function importarExtratoAction(
   revalidatePath("/");
   return { success: true, importadas: novos.length, duplicadas };
 }
+
+export async function importarFaturaCartaoAction(
+  cartaoId: number,
+  itens: Array<{
+    data: string;
+    valor: number;
+    descricao: string;
+    categoria?: string;
+    idExterno: string;
+  }>
+): Promise<ImportacaoResult> {
+  if (!itens.length) return { success: false, error: "Nenhum item selecionado." };
+  const userId = await getCurrentUserId();
+
+  const cartao = await prisma.cartao.findFirst({
+    where: { id: cartaoId, userId, isDeleted: false },
+    select: { id: true },
+  });
+  if (!cartao) return { success: false, error: "Cartão não encontrado." };
+
+  const idsExternos = itens.map((i) => i.idExterno);
+  const existentes = await prisma.compraCartao.findMany({
+    where: { userId, idExterno: { in: idsExternos }, isDeleted: false },
+    select: { idExterno: true },
+  });
+  const jaImportados = new Set(existentes.map((e) => e.idExterno));
+
+  const novos = itens.filter((i) => !jaImportados.has(i.idExterno));
+  const duplicadas = itens.length - novos.length;
+
+  if (novos.length === 0) {
+    return { success: false, error: "Todas as transações selecionadas já foram importadas." };
+  }
+
+  await prisma.compraCartao.createMany({
+    data: novos.map((i) => ({
+      userId,
+      cartaoId,
+      descricao: i.descricao,
+      categoria: i.categoria || null,
+      valorTotal: i.valor,
+      parcelas: 1,
+      dataCompra: new Date(`${i.data}T12:00:00.000Z`),
+      idExterno: i.idExterno,
+    })),
+  });
+
+  revalidatePath("/cartoes");
+  revalidatePath("/");
+  return { success: true, importadas: novos.length, duplicadas };
+}

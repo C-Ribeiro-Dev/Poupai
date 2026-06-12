@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import {
   Plus,
   Target,
@@ -9,14 +9,26 @@ import {
   CheckCircle2,
   AlertCircle,
   CalendarClock,
+  Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import type { MetaRow, MetaStatus } from "@/types/metas";
+import { batchDeleteMetaAction } from "@/actions/metas";
 import { MetaFormDialog } from "./meta-form-dialog";
 import { DeleteMetaDialog } from "./delete-meta-dialog";
 import { AporteDialog } from "./aporte-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const statusConfig: Record<MetaStatus, { label: string; icon: React.ElementType; badge: string }> = {
   concluida: {
@@ -53,10 +65,35 @@ export function MetasClient({ metas }: MetasClientProps) {
   const [editItem, setEditItem] = useState<MetaRow | null>(null);
   const [deleteItem, setDeleteItem] = useState<MetaRow | null>(null);
   const [aporteItem, setAporteItem] = useState<MetaRow | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
+  const [isBatchPending, startBatchTransition] = useTransition();
 
   const emAndamento = metas.filter((m) => m.status !== "concluida");
   const concluidas = metas.filter((m) => m.status === "concluida");
   const totalGuardado = metas.reduce((acc, m) => acc + m.totalAportado, 0);
+
+  function toggleSelect(id: number) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  function handleBatchDelete() {
+    startBatchTransition(async () => {
+      const result = await batchDeleteMetaAction([...selectedIds]);
+      if (result.success) {
+        const n = selectedIds.size;
+        toast.success(`${n} meta${n > 1 ? "s" : ""} excluída${n > 1 ? "s" : ""}.`);
+        setSelectedIds(new Set());
+        setBatchDeleteOpen(false);
+      } else {
+        toast.error(result.error);
+      }
+    });
+  }
 
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6">
@@ -76,6 +113,22 @@ export function MetasClient({ metas }: MetasClientProps) {
           <span className="sm:hidden">Nova</span>
         </Button>
       </div>
+
+      {/* Batch action bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-2.5">
+          <span className="text-sm font-medium">
+            {selectedIds.size} selecionada{selectedIds.size > 1 ? "s" : ""}
+          </span>
+          <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())} className="text-muted-foreground">
+            Limpar
+          </Button>
+          <Button variant="destructive" size="sm" onClick={() => setBatchDeleteOpen(true)}>
+            <Trash2 className="size-4" />
+            Excluir selecionadas
+          </Button>
+        </div>
+      )}
 
       {/* Empty state */}
       {metas.length === 0 ? (
@@ -103,6 +156,8 @@ export function MetasClient({ metas }: MetasClientProps) {
               onEdit={setEditItem}
               onDelete={setDeleteItem}
               onAporte={setAporteItem}
+              selectedIds={selectedIds}
+              onToggle={toggleSelect}
             />
           )}
           {concluidas.length > 0 && (
@@ -115,6 +170,8 @@ export function MetasClient({ metas }: MetasClientProps) {
                 onEdit={setEditItem}
                 onDelete={setDeleteItem}
                 onAporte={setAporteItem}
+                selectedIds={selectedIds}
+                onToggle={toggleSelect}
               />
             </div>
           )}
@@ -143,6 +200,27 @@ export function MetasClient({ metas }: MetasClientProps) {
         }}
         meta={aporteItem}
       />
+
+      <Dialog open={batchDeleteOpen} onOpenChange={isBatchPending ? undefined : setBatchDeleteOpen}>
+        <DialogContent showCloseButton={!isBatchPending}>
+          <DialogHeader>
+            <DialogTitle>Excluir metas selecionadas</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir{" "}
+              <span className="font-medium text-foreground">{selectedIds.size} meta{selectedIds.size > 1 ? "s" : ""}</span>?
+              Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBatchDeleteOpen(false)} disabled={isBatchPending}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleBatchDelete} disabled={isBatchPending}>
+              {isBatchPending ? <><Loader2 className="size-4 animate-spin" />Excluindo...</> : <><Trash2 className="size-4" />Excluir</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -152,11 +230,15 @@ function MetaGrid({
   onEdit,
   onDelete,
   onAporte,
+  selectedIds,
+  onToggle,
 }: {
   metas: MetaRow[];
   onEdit: (m: MetaRow) => void;
   onDelete: (m: MetaRow) => void;
   onAporte: (m: MetaRow) => void;
+  selectedIds: Set<number>;
+  onToggle: (id: number) => void;
 }) {
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -164,22 +246,31 @@ function MetaGrid({
         const cfg = statusConfig[m.status];
         const StatusIcon = cfg.icon;
         const pct = Math.min(m.percentual, 100);
+        const isSelected = selectedIds.has(m.id);
         return (
-          <div key={m.id} className="group flex flex-col rounded-xl border border-border bg-card p-5">
+          <div key={m.id} className={cn("group flex flex-col rounded-xl border border-border bg-card p-5", isSelected && "ring-2 ring-primary/40")}>
             {/* Título + ações */}
             <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="truncate font-medium">{m.nome}</p>
-                <span
-                  className={cn(
-                    "mt-1 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium",
-                    cfg.badge
-                  )}
-                >
-                  <StatusIcon className="size-3" />
-                  {cfg.label}
-                  {m.dataAlvo && m.status !== "concluida" && ` · ${formatDataAlvo(m.dataAlvo)}`}
-                </span>
+              <div className="flex items-start gap-2 min-w-0">
+                <Checkbox
+                  checked={isSelected}
+                  onCheckedChange={() => onToggle(m.id)}
+                  className="mt-0.5 shrink-0"
+                  aria-label={`Selecionar meta ${m.nome}`}
+                />
+                <div className="min-w-0">
+                  <p className="truncate font-medium">{m.nome}</p>
+                  <span
+                    className={cn(
+                      "mt-1 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium",
+                      cfg.badge
+                    )}
+                  >
+                    <StatusIcon className="size-3" />
+                    {cfg.label}
+                    {m.dataAlvo && m.status !== "concluida" && ` · ${formatDataAlvo(m.dataAlvo)}`}
+                  </span>
+                </div>
               </div>
               <div className="flex shrink-0 items-center gap-1 transition-opacity md:opacity-0 md:focus-within:opacity-100 md:group-hover:opacity-100">
                 <Button

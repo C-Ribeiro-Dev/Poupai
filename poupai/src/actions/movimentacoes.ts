@@ -38,6 +38,7 @@ export async function createMovimentacaoAction(
       descricao: parsed.data.descricao || null,
       isEntrada: tipo.isEntrada,
       isFixaOuDiaria: false,
+      contaId: parsed.data.contaId || null,
     },
   });
 
@@ -82,6 +83,7 @@ export async function updateMovimentacaoAction(
       categoria: parsed.data.categoria || null,
       descricao: parsed.data.descricao || null,
       isEntrada: tipo.isEntrada,
+      contaId: parsed.data.contaId || null,
     },
   });
 

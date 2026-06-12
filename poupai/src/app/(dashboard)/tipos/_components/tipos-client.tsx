@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useTransition } from "react";
 import {
   Plus,
   Search,
@@ -9,13 +9,17 @@ import {
   Pencil,
   Trash2,
   Tag,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { TipoFormDialog } from "./tipo-form-dialog";
 import { DeleteTipoDialog } from "./delete-tipo-dialog";
+import { seedTiposPadraoAction } from "@/actions/tipos";
 import type { TipoMovimentacaoRow } from "@/types/tipos";
 
 type SortField = "nome" | "createdAt";
@@ -76,6 +80,15 @@ export function TiposClient({ tipos, initialSearch }: TiposClientProps) {
   const [createOpen, setCreateOpen] = useState(false);
   const [editTipo, setEditTipo] = useState<TipoMovimentacaoRow | null>(null);
   const [deleteTipo, setDeleteTipo] = useState<TipoMovimentacaoRow | null>(null);
+  const [isPendingSeed, startSeedTransition] = useTransition();
+
+  function handleSeed() {
+    startSeedTransition(async () => {
+      const result = await seedTiposPadraoAction();
+      if (result.success) toast.success("Tipos padrão adicionados com sucesso!");
+      else toast.error(result.error);
+    });
+  }
 
   const filtered = useMemo(() => {
     const term = search.toLowerCase();
@@ -120,10 +133,20 @@ export function TiposClient({ tipos, initialSearch }: TiposClientProps) {
             className="pl-8"
           />
         </div>
-        <Button onClick={() => setCreateOpen(true)} size="sm">
-          <Plus className="size-4" />
-          Novo tipo
-        </Button>
+        <div className="flex shrink-0 gap-2">
+          <Button variant="outline" size="sm" onClick={handleSeed} disabled={isPendingSeed}>
+            {isPendingSeed ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Sparkles className="size-4" />
+            )}
+            <span className="hidden sm:inline">Tipos padrão</span>
+          </Button>
+          <Button onClick={() => setCreateOpen(true)} size="sm">
+            <Plus className="size-4" />
+            Novo tipo
+          </Button>
+        </div>
       </div>
 
       {/* Table */}

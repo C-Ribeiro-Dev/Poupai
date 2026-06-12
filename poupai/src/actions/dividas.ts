@@ -95,3 +95,14 @@ export async function deleteDividaAction(id: number): Promise<DividaResult> {
   revalidatePath("/dividas");
   return { success: true };
 }
+
+export async function batchDeleteDividaAction(ids: number[]): Promise<DividaResult> {
+  if (ids.length === 0) return { success: false, error: "Nenhuma dívida selecionada." };
+  const userId = await getCurrentUserId();
+  await prisma.divida.updateMany({
+    where: { id: { in: ids }, userId, isDeleted: false },
+    data: { isDeleted: true },
+  });
+  revalidatePath("/dividas");
+  return { success: true };
+}

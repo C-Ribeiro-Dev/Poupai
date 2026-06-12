@@ -27,6 +27,7 @@ import { MovimentacaoDetailDialog } from "./movimentacao-detail-dialog";
 import type { MovimentacaoRow } from "@/types/movimentacoes";
 import type { TipoMovimentacaoRow } from "@/types/tipos";
 import type { CategoriaRow } from "@/types/categorias";
+import type { ContaRow } from "@/types/contas";
 
 type SortField = "data" | "valor";
 type PeriodPreset = "all" | "week" | "month" | "year" | "custom";
@@ -162,6 +163,7 @@ interface MovimentacoesClientProps {
   movimentacoes: MovimentacaoRow[];
   tipos: TipoMovimentacaoRow[];
   categorias: CategoriaRow[];
+  contas: ContaRow[];
   initialSearch?: string;
   isAdmin?: boolean;
 }
@@ -170,6 +172,7 @@ export function MovimentacoesClient({
   movimentacoes,
   tipos,
   categorias,
+  contas,
   initialSearch,
   isAdmin,
 }: MovimentacoesClientProps) {
@@ -657,6 +660,7 @@ export function MovimentacoesClient({
         onOpenChange={setCreateOpen}
         tipos={tipos}
         categorias={categorias}
+        contas={contas}
       />
       <MovimentacaoFormDialog
         open={!!editItem}
@@ -666,6 +670,7 @@ export function MovimentacoesClient({
         movimentacao={editItem}
         tipos={tipos}
         categorias={categorias}
+        contas={contas}
       />
       <DeleteMovimentacaoDialog
         open={!!deleteItem}

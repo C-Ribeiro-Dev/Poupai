@@ -191,6 +191,79 @@ export async function pagarFaturaAction(
   return { success: true };
 }
 
+export type MigracaoResult =
+  | { success: true; migradas: number; ignoradas: number }
+  | { success: false; error: string };
+
+export async function migrarMovimentacoesParaCartaoAction(
+  cartaoId: number
+): Promise<MigracaoResult> {
+  const userId = await getCurrentUserId();
+
+  const cartao = await prisma.cartao.findFirst({
+    where: { id: cartaoId, userId, isDeleted: false },
+    select: { id: true },
+  });
+  if (!cartao) return { success: false, error: "Cartão não encontrado." };
+
+  // Movimentações importadas do CSV de fatura do Nubank
+  const movs = await prisma.movimentacao.findMany({
+    where: {
+      userId,
+      isDeleted: false,
+      idExterno: { startsWith: "nub-card:" },
+    },
+    select: { id: true, descricao: true, categoria: true, valor: true, data: true, idExterno: true },
+  });
+
+  if (movs.length === 0) {
+    return { success: false, error: "Nenhuma movimentação de cartão Nubank encontrada para migrar." };
+  }
+
+  // Dedup: ignora as que já viraram CompraCartao
+  const idsExternos = movs.map((m) => m.idExterno!);
+  const jaExistem = await prisma.compraCartao.findMany({
+    where: { userId, idExterno: { in: idsExternos }, isDeleted: false },
+    select: { idExterno: true },
+  });
+  const jaExistemSet = new Set(jaExistem.map((c) => c.idExterno));
+
+  const novas = movs.filter((m) => !jaExistemSet.has(m.idExterno));
+  const ignoradas = movs.length - novas.length;
+
+  await prisma.$transaction(async (tx) => {
+    if (novas.length > 0) {
+      await tx.compraCartao.createMany({
+        data: novas.map((m) => ({
+          userId,
+          cartaoId,
+          descricao: m.descricao ?? "Sem descrição",
+          categoria: m.categoria,
+          valorTotal: m.valor,
+          parcelas: 1,
+          dataCompra: m.data,
+          idExterno: m.idExterno,
+        })),
+      });
+    }
+
+    // Soft-delete todas (inclusive as ignoradas — já estão no cartão)
+    await tx.movimentacao.updateMany({
+      where: {
+        userId,
+        isDeleted: false,
+        idExterno: { startsWith: "nub-card:" },
+      },
+      data: { isDeleted: true },
+    });
+  });
+
+  revalidatePath("/cartoes");
+  revalidatePath("/movimentacoes");
+  revalidatePath("/");
+  return { success: true, migradas: novas.length, ignoradas };
+}
+
 export async function desfazerPagamentoFaturaAction(
   cartaoId: number,
   mesRef: string

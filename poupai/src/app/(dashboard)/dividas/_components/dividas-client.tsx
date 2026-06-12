@@ -15,7 +15,8 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDate } from "@/lib/format";
 import type { DividaRow } from "@/types/dividas";
-import { pagarParcelaAction, deleteDividaAction } from "@/actions/dividas";
+import { pagarParcelaAction, deleteDividaAction, batchDeleteDividaAction } from "@/actions/dividas";
+import { Checkbox } from "@/components/ui/checkbox";
 import { DividaFormDialog } from "./divida-form-dialog";
 import {
   Dialog,
@@ -34,6 +35,9 @@ export function DividasClient({ dividas }: Props) {
   const [formOpen, setFormOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<DividaRow | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DividaRow | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
+  const [isBatchPending, startBatchTransition] = useTransition();
 
   const ativas = dividas.filter((d) => !d.quitada);
   const quitadas = dividas.filter((d) => d.quitada);
@@ -47,6 +51,28 @@ export function DividasClient({ dividas }: Props) {
   function openEdit(d: DividaRow) {
     setEditTarget(d);
     setFormOpen(true);
+  }
+
+  function toggleSelect(id: number) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  function handleBatchDelete() {
+    startBatchTransition(async () => {
+      const result = await batchDeleteDividaAction([...selectedIds]);
+      if (result.success) {
+        const n = selectedIds.size;
+        toast.success(`${n} dívida${n > 1 ? "s" : ""} excluída${n > 1 ? "s" : ""}.`);
+        setSelectedIds(new Set());
+        setBatchDeleteOpen(false);
+      } else {
+        toast.error(result.error);
+      }
+    });
   }
 
   return (
@@ -68,6 +94,22 @@ export function DividasClient({ dividas }: Props) {
           <span className="sm:hidden">Nova</span>
         </Button>
       </div>
+
+      {/* Batch action bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-2.5">
+          <span className="text-sm font-medium">
+            {selectedIds.size} selecionada{selectedIds.size > 1 ? "s" : ""}
+          </span>
+          <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())} className="text-muted-foreground">
+            Limpar
+          </Button>
+          <Button variant="destructive" size="sm" onClick={() => setBatchDeleteOpen(true)}>
+            <Trash2 className="size-4" />
+            Excluir selecionadas
+          </Button>
+        </div>
+      )}
 
       {/* Resumo */}
       {ativas.length > 0 && (
@@ -110,6 +152,8 @@ export function DividasClient({ dividas }: Props) {
               divida={d}
               onEdit={() => openEdit(d)}
               onDelete={() => setDeleteTarget(d)}
+              isSelected={selectedIds.has(d.id)}
+              onToggle={() => toggleSelect(d.id)}
             />
           ))}
           {quitadas.length > 0 && (
@@ -121,6 +165,8 @@ export function DividasClient({ dividas }: Props) {
                   divida={d}
                   onEdit={() => openEdit(d)}
                   onDelete={() => setDeleteTarget(d)}
+                  isSelected={selectedIds.has(d.id)}
+                  onToggle={() => toggleSelect(d.id)}
                 />
               ))}
             </>
@@ -139,6 +185,27 @@ export function DividasClient({ dividas }: Props) {
         onOpenChange={(v) => { if (!v) setDeleteTarget(null); }}
         divida={deleteTarget}
       />
+
+      <Dialog open={batchDeleteOpen} onOpenChange={isBatchPending ? undefined : setBatchDeleteOpen}>
+        <DialogContent showCloseButton={!isBatchPending}>
+          <DialogHeader>
+            <DialogTitle>Excluir dívidas selecionadas</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir{" "}
+              <span className="font-medium text-foreground">{selectedIds.size} dívida{selectedIds.size > 1 ? "s" : ""}</span>?
+              Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBatchDeleteOpen(false)} disabled={isBatchPending}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleBatchDelete} disabled={isBatchPending}>
+              {isBatchPending ? <><Loader2 className="size-4 animate-spin" />Excluindo...</> : <><Trash2 className="size-4" />Excluir</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -149,10 +216,14 @@ function DividaCard({
   divida: d,
   onEdit,
   onDelete,
+  isSelected,
+  onToggle,
 }: {
   divida: DividaRow;
   onEdit: () => void;
   onDelete: () => void;
+  isSelected: boolean;
+  onToggle: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
   const parcelas_restantes = d.nParcelas - d.parcelasPagas;
@@ -175,10 +246,18 @@ function DividaCard({
       className={cn(
         "rounded-xl border border-border bg-card p-4 transition-colors",
         d.quitada && "opacity-60",
-        isVencida && "border-red-300 dark:border-red-800/60"
+        isVencida && "border-red-300 dark:border-red-800/60",
+        isSelected && "ring-2 ring-primary/40"
       )}
     >
       <div className="flex items-start gap-3">
+        {/* Checkbox */}
+        <Checkbox
+          checked={isSelected}
+          onCheckedChange={onToggle}
+          className="mt-1 shrink-0"
+          aria-label={`Selecionar dívida ${d.credor}`}
+        />
         {/* Ícone */}
         <div
           className={cn(

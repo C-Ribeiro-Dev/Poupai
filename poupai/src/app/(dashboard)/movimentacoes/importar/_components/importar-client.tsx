@@ -25,7 +25,7 @@ import type { ContaRow } from "@/types/contas";
 import type { CartaoRow } from "@/types/cartoes";
 import { parseNubankCsv, type LinhaExtrato } from "@/lib/nubank-csv";
 import { parseNubankCartaoCsv, type LinhaCartao } from "@/lib/nubank-cartao-csv";
-import { importarExtratoAction } from "@/actions/importacao";
+import { importarExtratoAction, importarFaturaCartaoAction } from "@/actions/importacao";
 
 // ─── Tipos internos ───────────────────────────────────────────────────────────
 
@@ -52,6 +52,8 @@ interface ImportarClientProps {
   cartoes: CartaoRow[];
   sugestoes: Record<string, string>;
   idsImportados: string[];
+  idsComprasImportadas: string[];
+  initialCartaoId?: number;
 }
 
 const selectClass =
@@ -66,11 +68,13 @@ export function ImportarClient({
   cartoes,
   sugestoes,
   idsImportados,
+  idsComprasImportadas,
+  initialCartaoId,
 }: ImportarClientProps) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const [modo, setModo] = useState<Modo>("conta");
+  const [modo, setModo] = useState<Modo>(initialCartaoId ? "cartao" : "conta");
   const [linhasConta, setLinhasConta] = useState<LinhaContaPreview[]>([]);
   const [linhasCartao, setLinhasCartao] = useState<LinhaCartaoPreview[]>([]);
   const [nomeArquivo, setNomeArquivo] = useState("");
@@ -78,13 +82,14 @@ export function ImportarClient({
   const [tipoEntradaId, setTipoEntradaId] = useState(0);
   const [tipoSaidaId, setTipoSaidaId] = useState(0);
   const [contaId, setContaId] = useState(0);
-  const [cartaoId, setCartaoId] = useState(0);
+  const [cartaoId, setCartaoId] = useState(initialCartaoId ?? 0);
 
   const [isPending, startTransition] = useTransition();
 
   const tiposEntrada = tipos.filter((t) => t.isEntrada);
   const tiposSaida = tipos.filter((t) => !t.isEntrada);
   const idsSet = new Set(idsImportados);
+  const idsComprasSet = new Set(idsComprasImportadas);
 
   const linhasAtivas = modo === "conta" ? linhasConta : linhasCartao;
   const temArquivo = linhasAtivas.length > 0;
@@ -119,8 +124,8 @@ export function ImportarClient({
           setLinhasCartao(
             parsed.map((l) => ({
               ...l,
-              jaImportada: idsSet.has(l.idExterno),
-              selecionada: !idsSet.has(l.idExterno),
+              jaImportada: idsComprasSet.has(l.idExterno),
+              selecionada: !idsComprasSet.has(l.idExterno),
               categoria: (l.categoria || sugestoes[l.descricao.trim().toLowerCase()]) ?? "",
               tipoId: l.isEntrada ? tipoEntradaId : tipoSaidaId,
             }))
@@ -193,29 +198,26 @@ export function ImportarClient({
   function importarCartao() {
     const selecionadas = linhasCartao.filter((l) => l.selecionada && !l.jaImportada);
     if (!selecionadas.length) { toast.error("Nenhuma transação nova selecionada."); return; }
-    const semTipo = selecionadas.filter((l) => !l.tipoId);
-    if (semTipo.length) { toast.error(`${semTipo.length} transação(ões) sem tipo definido.`); return; }
+    if (!cartaoId) { toast.error("Selecione o cartão antes de importar."); return; }
 
     startTransition(async () => {
-      const result = await importarExtratoAction({
-        contaId: undefined,
-        itens: selecionadas.map((l) => ({
+      const result = await importarFaturaCartaoAction(
+        cartaoId,
+        selecionadas.map((l) => ({
           data: l.data,
           valor: l.valor,
-          isEntrada: l.isEntrada,
           descricao: l.parcela && l.totalParcelas
             ? `${l.descricao} (${l.parcela}/${l.totalParcelas})`
             : l.descricao,
           categoria: l.categoria || undefined,
           idExterno: l.idExterno,
-          tipoId: l.tipoId,
-        })),
-      });
+        }))
+      );
       if (result.success) {
         toast.success(`${result.importadas} compras importadas.`,
           result.duplicadas > 0 ? { description: `${result.duplicadas} duplicadas ignoradas.` } : undefined
         );
-        router.push("/movimentacoes");
+        router.push("/cartoes");
       } else {
         toast.error(result.error);
       }
@@ -358,17 +360,10 @@ export function ImportarClient({
             />
           ) : (
             <ConfigCartao
-              tiposSaida={tiposSaida}
-              tiposEntrada={tiposEntrada}
               cartoes={cartoes}
-              tipoSaidaId={tipoSaidaId}
-              tipoEntradaId={tipoEntradaId}
               cartaoId={cartaoId}
-              onTipoSaida={handleSetTipoSaida}
-              onTipoEntrada={handleSetTipoEntrada}
               onCartao={setCartaoId}
               disabled={isPending}
-              temEstorno={linhasCartao.some((l) => l.isEntrada)}
             />
           )}
 
@@ -510,47 +505,25 @@ function ConfigConta({
 // ─── Config do cartão ─────────────────────────────────────────────────────────
 
 function ConfigCartao({
-  tiposSaida, tiposEntrada, cartoes,
-  tipoSaidaId, tipoEntradaId, cartaoId,
-  onTipoSaida, onTipoEntrada, onCartao, disabled, temEstorno,
+  cartoes, cartaoId, onCartao, disabled,
 }: {
-  tiposSaida: TipoMovimentacaoRow[];
-  tiposEntrada: TipoMovimentacaoRow[];
   cartoes: CartaoRow[];
-  tipoSaidaId: number;
-  tipoEntradaId: number;
   cartaoId: number;
-  onTipoSaida: (v: number) => void;
-  onTipoEntrada: (v: number) => void;
   onCartao: (v: number) => void;
   disabled: boolean;
-  temEstorno: boolean;
 }) {
   return (
-    <div className="grid grid-cols-1 gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-3">
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="tipoGasto">Tipo padrão para gastos *</Label>
-        <select id="tipoGasto" value={tipoSaidaId || ""} onChange={(e) => onTipoSaida(Number(e.target.value) || 0)} disabled={disabled} className={selectClass}>
-          <option value="">Selecione...</option>
-          {tiposSaida.map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
-        </select>
-      </div>
-      {temEstorno && (
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="tipoEstorno">Tipo padrão para estornos</Label>
-          <select id="tipoEstorno" value={tipoEntradaId || ""} onChange={(e) => onTipoEntrada(Number(e.target.value) || 0)} disabled={disabled} className={selectClass}>
-            <option value="">Selecione...</option>
-            {tiposEntrada.map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
-          </select>
-        </div>
-      )}
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="cartao">Cartão <span className="text-xs font-normal text-muted-foreground">(opcional)</span></Label>
+    <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-end">
+      <div className="flex flex-col gap-1.5 sm:w-72">
+        <Label htmlFor="cartao">Cartão *</Label>
         <select id="cartao" value={cartaoId || ""} onChange={(e) => onCartao(Number(e.target.value) || 0)} disabled={disabled} className={selectClass}>
-          <option value="">Sem cartão</option>
+          <option value="">Selecione o cartão...</option>
           {cartoes.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
         </select>
       </div>
+      <p className="text-xs text-muted-foreground">
+        As compras serão vinculadas ao cartão e distribuídas nas faturas conforme a data de cada transação.
+      </p>
     </div>
   );
 }

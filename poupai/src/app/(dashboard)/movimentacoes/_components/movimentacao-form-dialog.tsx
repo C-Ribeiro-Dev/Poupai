@@ -30,6 +30,7 @@ import {
 } from "@/types/movimentacoes";
 import type { TipoMovimentacaoRow } from "@/types/tipos";
 import type { CategoriaRow } from "@/types/categorias";
+import type { ContaRow } from "@/types/contas";
 import { createMovimentacaoAction, updateMovimentacaoAction } from "@/actions/movimentacoes";
 
 import { CategoriaSelect } from "@/components/categoria-select";
@@ -50,6 +51,7 @@ interface MovimentacaoFormDialogProps {
   movimentacao?: MovimentacaoRow | null;
   tipos: TipoMovimentacaoRow[];
   categorias: CategoriaRow[];
+  contas: ContaRow[];
 }
 
 export function MovimentacaoFormDialog({
@@ -58,6 +60,7 @@ export function MovimentacaoFormDialog({
   movimentacao,
   tipos,
   categorias,
+  contas,
 }: MovimentacaoFormDialogProps) {
   const isEditing = !!movimentacao;
   const [isPending, startTransition] = useTransition();
@@ -69,6 +72,7 @@ export function MovimentacaoFormDialog({
       data: todayStr(),
       categoria: "",
       descricao: "",
+      contaId: undefined,
     },
   });
 
@@ -83,6 +87,7 @@ export function MovimentacaoFormDialog({
         data: movimentacao ? toDateInputValue(movimentacao.data) : todayStr(),
         categoria: movimentacao?.categoria ?? "",
         descricao: movimentacao?.descricao ?? "",
+        contaId: movimentacao?.contaId ?? undefined,
       });
     }
   }, [open, movimentacao, form]);
@@ -234,6 +239,40 @@ export function MovimentacaoFormDialog({
               </p>
             )}
           </div>
+
+          {/* Conta */}
+          {contas.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="conta">
+                Conta{" "}
+                <span className="text-xs font-normal text-muted-foreground">(opcional)</span>
+              </Label>
+              <Controller
+                control={form.control}
+                name="contaId"
+                render={({ field: { value, onChange } }) => (
+                  <Select
+                    value={value ? String(value) : null}
+                    onValueChange={(v: string | null) =>
+                      onChange(v ? Number(v) : undefined)
+                    }
+                    disabled={isPending}
+                  >
+                    <SelectTrigger id="conta">
+                      <SelectValue placeholder="Selecione uma conta..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {contas.map((c) => (
+                        <SelectItem key={c.id} value={String(c.id)}>
+                          {c.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+          )}
 
           {/* Descrição */}
           <div className="flex flex-col gap-1.5">

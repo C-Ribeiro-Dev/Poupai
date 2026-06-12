@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
-import { Plus, CreditCard, Pencil, Trash2, Receipt, ShoppingCart } from "lucide-react";
+import Link from "next/link";
+import { Plus, CreditCard, Pencil, Trash2, Receipt, ShoppingCart, ArrowRightLeft, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import { CartaoFormDialog } from "./cartao-form-dialog";
 import { DeleteCartaoDialog } from "./delete-cartao-dialog";
 import { CompraFormDialog } from "./compra-form-dialog";
 import { FaturasDialog } from "./faturas-dialog";
+import { MigrarCartaoDialog } from "./migrar-cartao-dialog";
 
 const statusBadge: Record<string, string> = {
   paga: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
@@ -39,6 +41,7 @@ export function CartoesClient({ cartoes, tipos, categorias }: CartoesClientProps
   const [deleteItem, setDeleteItem] = useState<CartaoRow | null>(null);
   const [compraItem, setCompraItem] = useState<CartaoRow | null>(null);
   const [faturasItem, setFaturasItem] = useState<CartaoRow | null>(null);
+  const [migrarOpen, setMigrarOpen] = useState(false);
 
   const totalFaturasAbertas = cartoes.reduce(
     (acc, c) => acc + (c.faturaAtual && !c.faturaAtual.paga ? c.faturaAtual.total : 0),
@@ -57,11 +60,19 @@ export function CartoesClient({ cartoes, tipos, categorias }: CartoesClientProps
               : "Controle de cartões de crédito e faturas"}
           </p>
         </div>
-        <Button onClick={() => setCreateOpen(true)} size="sm" className="shrink-0">
-          <Plus className="size-4" />
-          <span className="hidden sm:inline">Novo cartão</span>
-          <span className="sm:hidden">Novo</span>
-        </Button>
+        <div className="flex shrink-0 gap-2">
+          {cartoes.length > 0 && (
+            <Button variant="outline" onClick={() => setMigrarOpen(true)} size="sm">
+              <ArrowRightLeft className="size-4" />
+              <span className="hidden sm:inline">Migrar do extrato</span>
+            </Button>
+          )}
+          <Button onClick={() => setCreateOpen(true)} size="sm">
+            <Plus className="size-4" />
+            <span className="hidden sm:inline">Novo cartão</span>
+            <span className="sm:hidden">Novo</span>
+          </Button>
+        </div>
       </div>
 
       {/* Empty state */}
@@ -179,10 +190,11 @@ export function CartoesClient({ cartoes, tipos, categorias }: CartoesClientProps
                 )}
 
                 {/* Ações */}
-                <div className="mt-4 grid grid-cols-2 gap-2">
+                <div className="mt-4 grid grid-cols-3 gap-2">
                   <Button variant="outline" size="sm" onClick={() => setCompraItem(c)}>
                     <ShoppingCart className="size-4" />
-                    Nova compra
+                    <span className="hidden sm:inline">Nova compra</span>
+                    <span className="sm:hidden">Compra</span>
                   </Button>
                   <Button
                     variant="outline"
@@ -191,7 +203,15 @@ export function CartoesClient({ cartoes, tipos, categorias }: CartoesClientProps
                     disabled={c.faturas.length === 0}
                   >
                     <Receipt className="size-4" />
-                    Ver faturas
+                    <span className="hidden sm:inline">Ver faturas</span>
+                    <span className="sm:hidden">Faturas</span>
+                  </Button>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href={`/movimentacoes/importar?cartao=${c.id}`}>
+                      <Upload className="size-4" />
+                      <span className="hidden sm:inline">Importar</span>
+                      <span className="sm:hidden">CSV</span>
+                    </Link>
                   </Button>
                 </div>
               </div>
@@ -230,6 +250,11 @@ export function CartoesClient({ cartoes, tipos, categorias }: CartoesClientProps
         }}
         cartao={faturasItem}
         tipos={tipos}
+      />
+      <MigrarCartaoDialog
+        open={migrarOpen}
+        onOpenChange={setMigrarOpen}
+        cartoes={cartoes}
       />
     </div>
   );

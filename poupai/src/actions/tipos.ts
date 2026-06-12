@@ -97,3 +97,35 @@ export async function deleteTipoAction(id: number): Promise<TipoActionResult> {
   revalidatePath("/tipos");
   return { success: true };
 }
+
+const TIPOS_PADRAO = [
+  { nome: "Salário", isEntrada: true },
+  { nome: "Freelance", isEntrada: true },
+  { nome: "Outros+", isEntrada: true },
+  { nome: "Cartão de Crédito", isEntrada: false },
+  { nome: "Débito / Pix", isEntrada: false },
+  { nome: "Dinheiro", isEntrada: false },
+  { nome: "Outros-", isEntrada: false },
+];
+
+export async function seedTiposPadraoAction(): Promise<TipoActionResult> {
+  const userId = await getCurrentUserId();
+
+  const existentes = await prisma.tipoMovimentacao.findMany({
+    where: { userId, isDeleted: false },
+    select: { nome: true },
+  });
+  const existentesNomes = new Set(existentes.map((e) => e.nome));
+  const novos = TIPOS_PADRAO.filter((t) => !existentesNomes.has(t.nome));
+
+  if (novos.length === 0) {
+    return { success: false, error: "Todos os tipos padrão já existem." };
+  }
+
+  await prisma.tipoMovimentacao.createMany({
+    data: novos.map((t) => ({ ...t, userId })),
+  });
+
+  revalidatePath("/tipos");
+  return { success: true };
+}

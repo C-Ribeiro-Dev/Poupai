@@ -17,6 +17,8 @@ export async function getMovimentacoes(userId: string): Promise<MovimentacaoRow[
       descricao: true,
       isFixaOuDiaria: true,
       movimentacaoFixaId: true,
+      contaId: true,
+      conta: { select: { nome: true } },
       createdAt: true,
     },
   });
@@ -32,6 +34,8 @@ export async function getMovimentacoes(userId: string): Promise<MovimentacaoRow[
     descricao: m.descricao,
     isFixaOuDiaria: m.isFixaOuDiaria,
     movimentacaoFixaId: m.movimentacaoFixaId,
+    contaId: m.contaId,
+    contaNome: m.conta?.nome ?? null,
     createdAt: m.createdAt,
   }));
 }

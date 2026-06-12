@@ -44,3 +44,11 @@ export async function getIdsExternosImportados(userId: string): Promise<string[]
   });
   return rows.map((r) => r.idExterno!);
 }
+
+export async function getIdsExternosComprasCartao(userId: string): Promise<string[]> {
+  const rows = await prisma.compraCartao.findMany({
+    where: { userId, idExterno: { not: null }, isDeleted: false },
+    select: { idExterno: true },
+  });
+  return rows.map((r) => r.idExterno!);
+}

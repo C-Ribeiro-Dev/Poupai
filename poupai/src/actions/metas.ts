@@ -77,6 +77,18 @@ export async function deleteMetaAction(id: number): Promise<MetaActionResult> {
   return { success: true };
 }
 
+export async function batchDeleteMetaAction(ids: number[]): Promise<MetaActionResult> {
+  if (ids.length === 0) return { success: false, error: "Nenhuma meta selecionada." };
+  const userId = await getCurrentUserId();
+  await prisma.meta.updateMany({
+    where: { id: { in: ids }, userId, isDeleted: false },
+    data: { isDeleted: true },
+  });
+  revalidatePath("/metas");
+  revalidatePath("/");
+  return { success: true };
+}
+
 export async function aportarMetaAction(
   metaId: number,
   data: AporteFormData
