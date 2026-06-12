@@ -39,7 +39,7 @@ export async function getSugestoesCategoria(userId: string): Promise<Record<stri
 // Identificadores externos já importados (para marcar duplicados no preview)
 export async function getIdsExternosImportados(userId: string): Promise<string[]> {
   const rows = await prisma.movimentacao.findMany({
-    where: { userId, idExterno: { not: null } },
+    where: { userId, idExterno: { not: null }, isDeleted: false },
     select: { idExterno: true },
   });
   return rows.map((r) => r.idExterno!);

@@ -29,7 +29,7 @@ export async function importarExtratoAction(
   // Dedup: ignora transações cujo identificador já foi importado
   const idsExternos = itens.map((i) => i.idExterno);
   const existentes = await prisma.movimentacao.findMany({
-    where: { userId, idExterno: { in: idsExternos } },
+    where: { userId, idExterno: { in: idsExternos }, isDeleted: false },
     select: { idExterno: true },
   });
   const jaImportados = new Set(existentes.map((e) => e.idExterno));
