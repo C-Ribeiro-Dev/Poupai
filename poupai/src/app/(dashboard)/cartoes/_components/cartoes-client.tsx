@@ -100,7 +100,10 @@ export function CartoesClient({ cartoes, tipos, categorias }: CartoesClientProps
           {cartoes.map((c) => {
             const pctUso = c.limite > 0 ? (c.usado / c.limite) * 100 : 0;
             return (
-              <div key={c.id} className="group rounded-xl border border-border bg-card p-5">
+              <div key={c.id} className="group overflow-hidden rounded-xl border border-border bg-card">
+                {/* Barra colorida no topo */}
+                <div className="h-1.5 w-full" style={{ backgroundColor: c.cor }} />
+                <div className="p-5">
                 {/* Header do cartão */}
                 <div className="flex items-center gap-3">
                   <div
@@ -172,8 +175,17 @@ export function CartoesClient({ cartoes, tipos, categorias }: CartoesClientProps
                           Fatura {mesRefLabel(c.faturaAtual.mesRef)}
                         </p>
                         <p className="text-lg font-bold tabular-nums">
-                          {formatCurrency(c.faturaAtual.total)}
+                          {formatCurrency(
+                            c.faturaAtual.totalPago > 0
+                              ? Math.max(0, c.faturaAtual.total - c.faturaAtual.totalPago)
+                              : c.faturaAtual.total
+                          )}
                         </p>
+                        {c.faturaAtual.totalPago > 0 && !c.faturaAtual.paga && (
+                          <p className="text-xs text-muted-foreground">
+                            de {formatCurrency(c.faturaAtual.total)}
+                          </p>
+                        )}
                       </div>
                       <span
                         className={cn(
@@ -216,6 +228,7 @@ export function CartoesClient({ cartoes, tipos, categorias }: CartoesClientProps
                     <span className="hidden sm:inline">Importar</span>
                     <span className="sm:hidden">CSV</span>
                   </Link>
+                </div>
                 </div>
               </div>
             );

@@ -9,6 +9,8 @@ import {
   Trash2,
   Receipt,
   RefreshCw,
+  User,
+  Users,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -206,6 +208,62 @@ export function FaturasDialog({ open, onOpenChange, cartao, tipos }: FaturasDial
                 </div>
               )}
             </div>
+
+            {/* Resumo por responsável — só aparece se houver itens de terceiros */}
+            {fatura.itens.some((i) => i.responsavel) && (() => {
+              const porPessoa = new Map<string, number>();
+              for (const item of fatura.itens) {
+                const key = item.responsavel ?? "Você";
+                porPessoa.set(key, (porPessoa.get(key) ?? 0) + item.valorParcela);
+              }
+              const entries = [...porPessoa.entries()].sort(([a], [b]) =>
+                a === "Você" ? -1 : b === "Você" ? 1 : a.localeCompare(b)
+              );
+              const totalTerceiros = entries
+                .filter(([k]) => k !== "Você")
+                .reduce((acc, [, v]) => acc + v, 0);
+              return (
+                <div className="rounded-lg border border-border bg-muted/20 p-3">
+                  <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                    <Users className="size-3.5" />
+                    Divisão por responsável
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    {entries.map(([nome, valor]) => (
+                      <div key={nome} className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5">
+                          <div className={cn(
+                            "flex size-5 items-center justify-center rounded-full",
+                            nome === "Você"
+                              ? "bg-blue-500/15 text-blue-600 dark:text-blue-400"
+                              : "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                          )}>
+                            <User className="size-3" />
+                          </div>
+                          <span className="text-sm font-medium">{nome}</span>
+                        </div>
+                        <span className={cn(
+                          "text-sm font-semibold tabular-nums",
+                          nome === "Você"
+                            ? "text-foreground"
+                            : "text-amber-600 dark:text-amber-400"
+                        )}>
+                          {formatCurrency(valor)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  {totalTerceiros > 0 && (
+                    <p className="mt-2 border-t border-border pt-2 text-xs text-muted-foreground">
+                      A receber de terceiros:{" "}
+                      <span className="font-medium text-amber-600 dark:text-amber-400">
+                        {formatCurrency(totalTerceiros)}
+                      </span>
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Itens */}
             <div className="max-h-56 overflow-y-auto rounded-lg border border-border">

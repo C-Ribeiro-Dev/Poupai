@@ -114,21 +114,45 @@ export function DividasClient({ dividas }: Props) {
       {/* Resumo */}
       {ativas.length > 0 && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <div className="rounded-xl border border-border bg-card p-4">
-            <p className="text-xs text-muted-foreground">Total devendo</p>
-            <p className="mt-1.5 text-xl font-bold tabular-nums text-red-600 dark:text-red-400">
-              {formatCurrency(totalDevedor)}
-            </p>
+          <div className="overflow-hidden rounded-xl border border-border bg-card">
+            <div className="h-1.5 bg-red-500" />
+            <div className="p-4">
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="flex size-6 items-center justify-center rounded-md bg-red-500/10">
+                  <Receipt className="size-3.5 text-red-500" />
+                </div>
+                <p className="text-xs text-muted-foreground">Total devendo</p>
+              </div>
+              <p className="text-xl font-bold tabular-nums text-red-600 dark:text-red-400">
+                {formatCurrency(totalDevedor)}
+              </p>
+            </div>
           </div>
-          <div className="rounded-xl border border-border bg-card p-4">
-            <p className="text-xs text-muted-foreground">Dívidas ativas</p>
-            <p className="mt-1.5 text-xl font-bold tabular-nums">{ativas.length}</p>
+          <div className="overflow-hidden rounded-xl border border-border bg-card">
+            <div className="h-1.5 bg-amber-400" />
+            <div className="p-4">
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="flex size-6 items-center justify-center rounded-md bg-amber-500/10">
+                  <AlertTriangle className="size-3.5 text-amber-500" />
+                </div>
+                <p className="text-xs text-muted-foreground">Dívidas ativas</p>
+              </div>
+              <p className="text-xl font-bold tabular-nums">{ativas.length}</p>
+            </div>
           </div>
-          <div className="rounded-xl border border-border bg-card p-4 col-span-2 sm:col-span-1">
-            <p className="text-xs text-muted-foreground">Quitadas</p>
-            <p className="mt-1.5 text-xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
-              {quitadas.length}
-            </p>
+          <div className="overflow-hidden rounded-xl border border-border bg-card col-span-2 sm:col-span-1">
+            <div className="h-1.5 bg-emerald-500" />
+            <div className="p-4">
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="flex size-6 items-center justify-center rounded-md bg-emerald-500/10">
+                  <CheckCircle2 className="size-3.5 text-emerald-500" />
+                </div>
+                <p className="text-xs text-muted-foreground">Quitadas</p>
+              </div>
+              <p className="text-xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+                {quitadas.length}
+              </p>
+            </div>
           </div>
         </div>
       )}

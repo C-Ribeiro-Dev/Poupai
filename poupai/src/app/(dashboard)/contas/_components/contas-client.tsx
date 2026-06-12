@@ -107,56 +107,58 @@ export function ContasClient({ data }: ContasClientProps) {
               <div
                 key={c.id}
                 className={cn(
-                  "group rounded-xl border border-border bg-card p-5",
+                  "group overflow-hidden rounded-xl border border-border bg-card",
                   !c.ativo && "opacity-60"
                 )}
               >
-                <div className="flex items-center gap-3">
-                  <div
-                    className="flex size-9 shrink-0 items-center justify-center rounded-xl"
-                    style={{ backgroundColor: `${c.cor}22` }}
+                {/* Barra colorida no topo */}
+                <div className="h-1.5 w-full" style={{ backgroundColor: c.cor }} />
+                <div className="p-5">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="flex size-9 shrink-0 items-center justify-center rounded-xl"
+                      style={{ backgroundColor: `${c.cor}22` }}
+                    >
+                      <Icon className="size-4.5" style={{ color: c.cor }} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{c.nome}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {getTipoContaLabel(c.tipo)}
+                        {c.instituicao && ` · ${c.instituicao}`}
+                        {!c.ativo && " · Inativa"}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1 transition-opacity md:opacity-0 md:focus-within:opacity-100 md:group-hover:opacity-100">
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => setEditItem(c)}
+                        aria-label={`Editar conta ${c.nome}`}
+                      >
+                        <Pencil className="size-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => setDeleteItem(c)}
+                        aria-label={`Excluir conta ${c.nome}`}
+                        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                  <p
+                    className={cn(
+                      "mt-4 text-2xl font-bold tabular-nums",
+                      c.saldoAtual >= 0 ? "text-foreground" : "text-red-600 dark:text-red-400"
+                    )}
                   >
-                    <Icon className="size-4.5" style={{ color: c.cor }} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{c.nome}</p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {getTipoContaLabel(c.tipo)}
-                      {c.instituicao && ` · ${c.instituicao}`}
-                      {!c.ativo && " · Inativa"}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-1 transition-opacity md:opacity-0 md:focus-within:opacity-100 md:group-hover:opacity-100">
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => setEditItem(c)}
-                      aria-label={`Editar conta ${c.nome}`}
-                    >
-                      <Pencil className="size-3.5" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => setDeleteItem(c)}
-                      aria-label={`Excluir conta ${c.nome}`}
-                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                    >
-                      <Trash2 className="size-3.5" />
-                    </Button>
-                  </div>
+                    {formatCurrency(c.saldoAtual)}
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">saldo atual</p>
                 </div>
-                <p
-                  className={cn(
-                    "mt-4 text-2xl font-bold tabular-nums",
-                    c.saldoAtual >= 0
-                      ? "text-foreground"
-                      : "text-red-600 dark:text-red-400"
-                  )}
-                >
-                  {formatCurrency(c.saldoAtual)}
-                </p>
-                <p className="mt-0.5 text-xs text-muted-foreground">saldo atual</p>
               </div>
             );
           })}

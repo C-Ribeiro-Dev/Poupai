@@ -130,6 +130,38 @@ export function MetasClient({ metas }: MetasClientProps) {
         </div>
       )}
 
+      {/* Progresso geral */}
+      {metas.length > 0 && (() => {
+        const totalAlvo = metas.filter((m) => m.status !== "concluida").reduce((acc, m) => acc + m.valorAlvo, 0);
+        const totalAportadoAtivas = metas.filter((m) => m.status !== "concluida").reduce((acc, m) => acc + m.totalAportado, 0);
+        const pctGeral = totalAlvo > 0 ? (totalAportadoAtivas / totalAlvo) * 100 : 0;
+        if (emAndamento.length === 0) return null;
+        return (
+          <div className="rounded-xl border border-border bg-card p-4">
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <div>
+                <p className="text-xs text-muted-foreground">Progresso geral</p>
+                <p className="mt-0.5 font-semibold tabular-nums">
+                  {formatCurrency(totalAportadoAtivas)}
+                  <span className="text-xs font-normal text-muted-foreground"> / {formatCurrency(totalAlvo)}</span>
+                </p>
+              </div>
+              <span className="text-2xl font-bold tabular-nums text-primary">{pctGeral.toFixed(0)}%</span>
+            </div>
+            <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-primary transition-all"
+                style={{ width: `${Math.min(pctGeral, 100)}%` }}
+              />
+            </div>
+            <div className="mt-2 flex gap-4 text-xs text-muted-foreground">
+              <span>{emAndamento.length} em andamento</span>
+              {concluidas.length > 0 && <span>{concluidas.length} concluída{concluidas.length !== 1 ? "s" : ""}</span>}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Empty state */}
       {metas.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border py-16 text-center">
