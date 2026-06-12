@@ -1,16 +1,26 @@
 {
-    "version": "2.0.0",
-    "tasks": [
-      {
-        "label": "build",
-        "type": "shell",
-        "command": "dotnet build",
-        "group": {
-          "kind": "build",
-          "isDefault": true
-        },
-        "problemMatcher": ["$msCompile"]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build Poupai Next",
+      "type": "shell",
+      "command": "npm run build",
+      "options": {
+        "cwd": "${workspaceFolder}/poupai-v2"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
       }
-    ]
-  }
-  
+    },
+    {
+      "label": "Run Poupai Next",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": {
+        "cwd": "${workspaceFolder}/poupai-v2"
+      },
+      "isBackground": true
+    }
+  ]
+}

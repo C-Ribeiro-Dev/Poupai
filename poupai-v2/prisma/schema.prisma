@@ -1,0 +1,279 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model TipoMovimentacao {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  nome      String
+  isEntrada Boolean  @default(false)
+  descricao String?
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  movimentacoes      Movimentacao[]
+  movimentacoesFixas MovimentacaoFixa[]
+
+  @@index([userId])
+  @@map("tipos_movimentacao")
+}
+
+model Movimentacao {
+  id                 Int               @id @default(autoincrement())
+  userId             String
+  valor              Decimal           @db.Decimal(18, 2)
+  tipoId             Int
+  tipo               TipoMovimentacao  @relation(fields: [tipoId], references: [id])
+  data               DateTime
+  categoria          String?
+  descricao          String?
+  isEntrada          Boolean           @default(false)
+  isFixaOuDiaria     Boolean           @default(false)
+  movimentacaoFixaId Int?
+  movimentacaoFixa   MovimentacaoFixa? @relation(fields: [movimentacaoFixaId], references: [id])
+  contaId            Int?
+  conta              Conta?            @relation(fields: [contaId], references: [id])
+  idExterno          String?
+  isDeleted          Boolean           @default(false)
+  createdAt          DateTime          @default(now())
+
+  @@index([userId])
+  @@index([data])
+  @@index([idExterno])
+  @@map("movimentacoes")
+}
+
+model Conta {
+  id           Int      @id @default(autoincrement())
+  userId       String
+  nome         String
+  tipo         String   @default("corrente")
+  instituicao  String?
+  cor          String   @default("#3b82f6")
+  saldoInicial Decimal  @default(0) @db.Decimal(18, 2)
+  ativo        Boolean  @default(true)
+  isDeleted    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  movimentacoes         Movimentacao[]
+  transferenciasOrigem  Transferencia[] @relation("TransferenciaOrigem")
+  transferenciasDestino Transferencia[] @relation("TransferenciaDestino")
+
+  @@index([userId])
+  @@map("contas")
+}
+
+model Transferencia {
+  id          Int      @id @default(autoincrement())
+  userId      String
+  deContaId   Int
+  deConta     Conta    @relation("TransferenciaOrigem", fields: [deContaId], references: [id])
+  paraContaId Int
+  paraConta   Conta    @relation("TransferenciaDestino", fields: [paraContaId], references: [id])
+  valor       Decimal  @db.Decimal(18, 2)
+  data        DateTime
+  descricao   String?
+  isDeleted   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@map("transferencias")
+}
+
+model MovimentacaoFixa {
+  id                  Int              @id @default(autoincrement())
+  userId              String
+  nome                String
+  tipoMovimentacaoId  Int
+  tipoMovimentacao    TipoMovimentacao @relation(fields: [tipoMovimentacaoId], references: [id])
+  valor               Decimal          @db.Decimal(18, 2)
+  diaVencimento       Int?
+  dataVencimento      DateTime?
+  dataFim             DateTime?
+  categoria           String?
+  formaPagamento      String?
+  observacoes         String?
+  ativo               Boolean          @default(true)
+  isEntrada           Boolean          @default(false)
+  pago                Boolean          @default(false)
+  dataUltimoPagamento DateTime?
+  isDeleted           Boolean          @default(false)
+  createdAt           DateTime         @default(now())
+
+  movimentacoes Movimentacao[]
+
+  @@index([userId])
+  @@map("movimentacoes_fixas")
+}
+
+model Orcamento {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  categoria String
+  valor     Decimal  @db.Decimal(18, 2)
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("orcamentos")
+}
+
+model AtivoInvestimento {
+  id              Int       @id @default(autoincrement())
+  userId          String
+  nome            String
+  classe          String
+  valorAtual      Decimal?  @db.Decimal(18, 2)
+  dataAtualizacao DateTime?
+  isDeleted       Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+
+  lancamentos LancamentoInvestimento[]
+
+  @@index([userId])
+  @@map("ativos_investimento")
+}
+
+model LancamentoInvestimento {
+  id         Int               @id @default(autoincrement())
+  userId     String
+  ativoId    Int
+  ativo      AtivoInvestimento @relation(fields: [ativoId], references: [id])
+  tipo       String
+  valor      Decimal           @db.Decimal(18, 2)
+  data       DateTime
+  observacao String?
+  isDeleted  Boolean           @default(false)
+  createdAt  DateTime          @default(now())
+
+  @@index([userId])
+  @@index([ativoId])
+  @@map("lancamentos_investimento")
+}
+
+model Cartao {
+  id            Int      @id @default(autoincrement())
+  userId        String
+  nome          String
+  bandeira      String?
+  limite        Decimal  @db.Decimal(18, 2)
+  diaFechamento Int
+  diaVencimento Int
+  cor           String   @default("#8b5cf6")
+  ativo         Boolean  @default(true)
+  isDeleted     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  compras    CompraCartao[]
+  pagamentos FaturaPagamento[]
+
+  @@index([userId])
+  @@map("cartoes")
+}
+
+model CompraCartao {
+  id         Int      @id @default(autoincrement())
+  userId     String
+  cartaoId   Int
+  cartao     Cartao   @relation(fields: [cartaoId], references: [id])
+  descricao  String
+  categoria  String?
+  valorTotal Decimal  @db.Decimal(18, 2)
+  parcelas   Int      @default(1)
+  dataCompra DateTime
+  isDeleted  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([cartaoId])
+  @@map("compras_cartao")
+}
+
+model FaturaPagamento {
+  id             Int      @id @default(autoincrement())
+  userId         String
+  cartaoId       Int
+  cartao         Cartao   @relation(fields: [cartaoId], references: [id])
+  mesRef         String
+  valor          Decimal  @db.Decimal(18, 2)
+  movimentacaoId Int?
+  createdAt      DateTime @default(now())
+
+  @@unique([cartaoId, mesRef])
+  @@index([userId])
+  @@map("faturas_pagamento")
+}
+
+model Meta {
+  id        Int       @id @default(autoincrement())
+  userId    String
+  nome      String
+  descricao String?
+  valorAlvo Decimal   @db.Decimal(18, 2)
+  dataAlvo  DateTime?
+  cor       String    @default("#22c55e")
+  isDeleted Boolean   @default(false)
+  createdAt DateTime  @default(now())
+
+  aportes MetaAporte[]
+
+  @@index([userId])
+  @@map("metas")
+}
+
+model MetaAporte {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  metaId    Int
+  meta      Meta     @relation(fields: [metaId], references: [id])
+  valor     Decimal  @db.Decimal(18, 2)
+  data      DateTime
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([metaId])
+  @@map("meta_aportes")
+}
+
+model Divida {
+  id                 Int       @id @default(autoincrement())
+  userId             String
+  credor             String
+  descricao          String?
+  valorTotal         Decimal   @db.Decimal(18, 2)
+  taxaJurosMensal    Decimal   @default(0) @db.Decimal(8, 4)
+  nParcelas          Int       @default(1)
+  parcelasPagas      Int       @default(0)
+  dataInicio         DateTime
+  dataProxVencimento DateTime?
+  categoria          String?
+  observacoes        String?
+  quitada            Boolean   @default(false)
+  isDeleted          Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+
+  @@index([userId])
+  @@map("dividas")
+}
+
+model Categoria {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  nome      String
+  cor       String   @default("#6B7280")
+  icone     String   @default("tag")
+  tipo      String   @default("ambos")
+  ativo     Boolean  @default(true)
+  isDefault Boolean  @default(false)
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("categorias")
+}
