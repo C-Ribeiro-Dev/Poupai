@@ -96,18 +96,28 @@ export async function deleteMovimentacaoAction(
 
   const existing = await prisma.movimentacao.findFirst({
     where: { id, userId, isDeleted: false },
-    select: { id: true },
+    select: { id: true, movimentacaoFixaId: true, isFixaOuDiaria: true },
   });
   if (!existing) {
     return { success: false, error: "Movimentação não encontrada." };
   }
 
-  await prisma.movimentacao.update({
-    where: { id },
-    data: { isDeleted: true },
+  await prisma.$transaction(async (tx) => {
+    await tx.movimentacao.update({
+      where: { id },
+      data: { isDeleted: true },
+    });
+
+    if (existing.isFixaOuDiaria && existing.movimentacaoFixaId) {
+      await tx.movimentacaoFixa.updateMany({
+        where: { id: existing.movimentacaoFixaId, userId },
+        data: { pago: false, dataUltimoPagamento: null },
+      });
+    }
   });
 
   revalidatePath("/movimentacoes");
+  revalidatePath("/movimentacoes-fixas");
   return { success: true };
 }
 
@@ -116,11 +126,29 @@ export async function batchDeleteMovimentacaoAction(
 ): Promise<MovimentacaoActionResult> {
   if (!ids.length) return { success: false, error: "Nenhum item selecionado." };
   const userId = await getCurrentUserId();
-  await prisma.movimentacao.updateMany({
-    where: { id: { in: ids }, userId, isDeleted: false },
-    data: { isDeleted: true },
+
+  const fixasIds = await prisma.movimentacao.findMany({
+    where: { id: { in: ids }, userId, isDeleted: false, isFixaOuDiaria: true, movimentacaoFixaId: { not: null } },
+    select: { movimentacaoFixaId: true },
   });
+
+  await prisma.$transaction(async (tx) => {
+    await tx.movimentacao.updateMany({
+      where: { id: { in: ids }, userId, isDeleted: false },
+      data: { isDeleted: true },
+    });
+
+    const fixaIdList = fixasIds.map((m) => m.movimentacaoFixaId!);
+    if (fixaIdList.length) {
+      await tx.movimentacaoFixa.updateMany({
+        where: { id: { in: fixaIdList }, userId },
+        data: { pago: false, dataUltimoPagamento: null },
+      });
+    }
+  });
+
   revalidatePath("/movimentacoes");
+  revalidatePath("/movimentacoes-fixas");
   return { success: true };
 }
 
