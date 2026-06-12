@@ -9,14 +9,9 @@ import { ImportarClient } from "./_components/importar-client";
 
 export const metadata: Metadata = { title: "Importar extrato" };
 
-export default async function ImportarPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ q?: string; cartao?: string }>;
-}) {
+export default async function ImportarPage() {
   const userId = await getCurrentUserId();
-  const [{ cartao }, tipos, categorias, contasData, cartoes, sugestoes, idsMovimentacoes, idsCompras] = await Promise.all([
-    searchParams,
+  const [tipos, categorias, contasData, cartoes, sugestoes, idsMovimentacoes, idsCompras] = await Promise.all([
     getTiposMovimentacao(userId),
     getCategorias(userId),
     getContas(userId),
@@ -25,8 +20,6 @@ export default async function ImportarPage({
     getIdsExternosImportados(userId),
     getIdsExternosComprasCartao(userId),
   ]);
-
-  const initialCartaoId = cartao ? Number(cartao) || undefined : undefined;
 
   return (
     <ImportarClient
@@ -37,7 +30,6 @@ export default async function ImportarPage({
       sugestoes={sugestoes}
       idsImportados={idsMovimentacoes}
       idsComprasImportadas={idsCompras}
-      initialCartaoId={initialCartaoId}
     />
   );
 }
