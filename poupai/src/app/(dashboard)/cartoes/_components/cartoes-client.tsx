@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Plus, CreditCard, Pencil, Trash2, Receipt, ShoppingCart, ArrowRightLeft, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import type { CartaoRow } from "@/types/cartoes";
 import type { TipoMovimentacaoRow } from "@/types/tipos";
 import type { CategoriaRow } from "@/types/categorias";
@@ -206,13 +206,14 @@ export function CartoesClient({ cartoes, tipos, categorias }: CartoesClientProps
                     <span className="hidden sm:inline">Ver faturas</span>
                     <span className="sm:hidden">Faturas</span>
                   </Button>
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href={`/movimentacoes/importar?cartao=${c.id}`}>
-                      <Upload className="size-4" />
-                      <span className="hidden sm:inline">Importar</span>
-                      <span className="sm:hidden">CSV</span>
-                    </Link>
-                  </Button>
+                  <Link
+                    href={`/movimentacoes/importar?cartao=${c.id}`}
+                    className={buttonVariants({ variant: "outline", size: "sm" })}
+                  >
+                    <Upload className="size-4" />
+                    <span className="hidden sm:inline">Importar</span>
+                    <span className="sm:hidden">CSV</span>
+                  </Link>
                 </div>
               </div>
             );
