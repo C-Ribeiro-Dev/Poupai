@@ -148,8 +148,8 @@ export function FaturasDialog({ open, onOpenChange, cartao, tipos }: FaturasDial
 
   return (
     <Dialog open={open} onOpenChange={isPending ? undefined : onOpenChange}>
-      <DialogContent className="sm:max-w-lg" showCloseButton={!isPending}>
-        <DialogHeader>
+      <DialogContent className="flex max-h-[90dvh] flex-col gap-0 p-0 sm:max-w-lg" showCloseButton={!isPending}>
+        <DialogHeader className="shrink-0 border-b px-5 pt-5 pb-4">
           <DialogTitle className="flex items-center gap-2">
             <Receipt className="size-5" style={{ color: cartao.cor }} />
             Faturas — {cartao.nome}
@@ -157,7 +157,8 @@ export function FaturasDialog({ open, onOpenChange, cartao, tipos }: FaturasDial
         </DialogHeader>
 
         {fatura ? (
-          <div className="flex flex-col gap-4">
+          <>
+          <div className="flex flex-col gap-4 overflow-y-auto px-5 py-4">
             {/* Navegação entre faturas */}
             <div className="flex items-center justify-between">
               <Button
@@ -349,39 +350,41 @@ export function FaturasDialog({ open, onOpenChange, cartao, tipos }: FaturasDial
               </div>
             )}
 
-            <DialogFooter>
-              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
-                Fechar
-              </Button>
-              {fatura.totalPago > 0 && (
-                <Button variant="outline" onClick={handleDesfazer} disabled={isPending}>
-                  {isPending ? (
-                    <Loader2 className="size-4 animate-spin" />
-                  ) : (
-                    <Undo2 className="size-4" />
-                  )}
-                  Desfazer último pagamento
-                </Button>
-              )}
-              {podePagar && (
-                <Button onClick={handlePagar} disabled={isPending}>
-                  {isPending ? (
-                    <>
-                      <Loader2 className="size-4 animate-spin" />
-                      Registrando...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="size-4" />
-                      {valorPagamento >= restante - 0.005
-                        ? `Pagar ${formatCurrency(valorPagamento || restante)}`
-                        : `Abater ${formatCurrency(valorPagamento || 0)}`}
-                    </>
-                  )}
-                </Button>
-              )}
-            </DialogFooter>
           </div>
+
+          <DialogFooter className="mx-0 mb-0 shrink-0 rounded-b-2xl px-5 py-4">
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
+              Fechar
+            </Button>
+            {fatura.totalPago > 0 && (
+              <Button variant="outline" onClick={handleDesfazer} disabled={isPending}>
+                {isPending ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Undo2 className="size-4" />
+                )}
+                Desfazer último pagamento
+              </Button>
+            )}
+            {podePagar && (
+              <Button onClick={handlePagar} disabled={isPending}>
+                {isPending ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" />
+                    Registrando...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="size-4" />
+                    {valorPagamento >= restante - 0.005
+                      ? `Pagar ${formatCurrency(valorPagamento || restante)}`
+                      : `Abater ${formatCurrency(valorPagamento || 0)}`}
+                  </>
+                )}
+              </Button>
+            )}
+          </DialogFooter>
+          </>
         ) : (
           <p className="py-8 text-center text-sm text-muted-foreground">
             Nenhuma fatura para exibir.
