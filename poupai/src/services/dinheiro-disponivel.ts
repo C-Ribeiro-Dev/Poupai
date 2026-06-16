@@ -62,8 +62,9 @@ export async function getDinheiroDisponivel(userId: string): Promise<DinheiroDis
       vencimento: vencimentoNoCiclo(f.diaVencimento, f.dataVencimento, now),
     }));
 
-  // Faturas abertas/fechadas/parciais não quitadas
+  // Faturas abertas/fechadas/parciais não quitadas com vencimento a partir de hoje
   const faturasCartao: DinheiroDisponivelDetalhe[] = [];
+  const hoje = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   for (const cartao of cartoes.filter((c) => c.ativo)) {
     for (const fatura of cartao.faturas) {
       if (
@@ -71,6 +72,8 @@ export async function getDinheiroDisponivel(userId: string): Promise<DinheiroDis
         fatura.status === "fechada" ||
         fatura.status === "parcial"
       ) {
+        // Ignorar faturas cujo vencimento já passou (não são mais obrigação pendente)
+        if (fatura.vencimento < hoje) continue;
         const saldo = Math.max(0, fatura.total - fatura.totalPago);
         if (saldo > 0.005) {
           faturasCartao.push({
