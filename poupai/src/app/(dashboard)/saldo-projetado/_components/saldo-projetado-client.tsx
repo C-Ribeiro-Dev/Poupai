@@ -52,12 +52,12 @@ const TIPO_COR: Record<EventoTipo, string> = {
 };
 
 const TIPO_BG: Record<EventoTipo, string> = {
-  fixa_receita: "bg-emerald-50",
-  fixa_despesa: "bg-sky-50",
-  fatura_cartao: "bg-purple-50",
-  divida: "bg-orange-50",
-  movimentacao_entrada: "bg-emerald-50",
-  movimentacao_saida: "bg-rose-50",
+  fixa_receita: "bg-emerald-500/10",
+  fixa_despesa: "bg-sky-500/10",
+  fatura_cartao: "bg-purple-500/10",
+  divida: "bg-orange-500/10",
+  movimentacao_entrada: "bg-emerald-500/10",
+  movimentacao_saida: "bg-rose-500/10",
 };
 
 function EventoRow({ evento }: { evento: EventoProjetado }) {
@@ -291,7 +291,7 @@ export function SaldoProjetadoClient({ data }: { data: SaldoProjetadoData }) {
                 "flex items-start gap-3 rounded-lg px-4 py-3 text-sm",
                 a.severidade === "critico"
                   ? "bg-destructive/10 text-destructive"
-                  : "bg-amber-50 text-amber-800"
+                  : "bg-amber-500/10 text-amber-700 dark:text-amber-400"
               )}
             >
               {a.severidade === "critico" ? (
@@ -389,7 +389,7 @@ export function SaldoProjetadoClient({ data }: { data: SaldoProjetadoData }) {
             <div
               className={cn(
                 "flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
-                saldoFinalPeriodo < 0 ? "bg-destructive/10" : "bg-emerald-50"
+                saldoFinalPeriodo < 0 ? "bg-destructive/10" : "bg-emerald-500/10"
               )}
             >
               {saldoFinalPeriodo < 0 ? (

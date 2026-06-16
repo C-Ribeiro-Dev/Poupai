@@ -7,8 +7,8 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FloatingInput } from "@/components/ui/floating-input";
+import { FloatingCombobox } from "@/components/ui/floating-combobox";
 import {
   Dialog,
   DialogContent,
@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/dialog";
 import { compraCartaoSchema, type CompraCartaoFormData, type CartaoRow } from "@/types/cartoes";
 import type { CategoriaRow } from "@/types/categorias";
-import { CategoriaSelect } from "@/components/categoria-select";
 import { createCompraCartaoAction } from "@/actions/cartoes";
 
 const todayStr = (): string => {
@@ -76,6 +75,10 @@ export function CompraFormDialog({ open, onOpenChange, cartao, categorias }: Com
   const valorParcelaPreview =
     !recorrente && valorTotal > 0 && parcelas > 1 ? valorTotal / parcelas : null;
 
+  const categoriasSaida = categorias.filter(
+    (c) => c.ativo && (c.tipo === "saida" || c.tipo === "ambos")
+  );
+
   return (
     <Dialog open={open} onOpenChange={isPending ? undefined : onOpenChange}>
       <DialogContent className="sm:max-w-md" showCloseButton={!isPending}>
@@ -124,50 +127,39 @@ export function CompraFormDialog({ open, onOpenChange, cartao, categorias }: Com
             </button>
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="descricao">Descrição</Label>
-            <Input
-              id="descricao"
-              placeholder="Ex: Netflix, Mercado, Tênis"
-              aria-invalid={!!form.formState.errors.descricao}
-              disabled={isPending}
-              {...form.register("descricao")}
-            />
-            {form.formState.errors.descricao && (
-              <p className="text-xs text-destructive">{form.formState.errors.descricao.message}</p>
-            )}
-          </div>
+          <FloatingInput
+            label="Descrição"
+            id="descricao"
+            placeholder="Ex: Netflix, Mercado, Tênis"
+            aria-invalid={!!form.formState.errors.descricao}
+            error={form.formState.errors.descricao?.message}
+            disabled={isPending}
+            {...form.register("descricao")}
+          />
 
           <div className={cn("grid gap-3", recorrente ? "grid-cols-1" : "grid-cols-2")}>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="valorTotal">
-                {recorrente ? "Valor mensal (R$)" : "Valor total (R$)"}
-              </Label>
-              <Input
-                id="valorTotal"
-                type="number"
-                step="0.01"
-                min="0.01"
-                placeholder="0.00"
-                aria-invalid={!!form.formState.errors.valorTotal}
-                disabled={isPending}
-                {...form.register("valorTotal", { valueAsNumber: true })}
-              />
-              {form.formState.errors.valorTotal && (
-                <p className="text-xs text-destructive">
-                  {form.formState.errors.valorTotal.message}
-                </p>
-              )}
-            </div>
+            <FloatingInput
+              label={recorrente ? "Valor mensal (R$)" : "Valor total (R$)"}
+              id="valorTotal"
+              type="number"
+              step="0.01"
+              min="0.01"
+              placeholder="0.00"
+              aria-invalid={!!form.formState.errors.valorTotal}
+              error={form.formState.errors.valorTotal?.message}
+              disabled={isPending}
+              {...form.register("valorTotal", { valueAsNumber: true })}
+            />
             {!recorrente && (
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="parcelas">Parcelas</Label>
-                <Input
+                <FloatingInput
+                  label="Parcelas"
                   id="parcelas"
                   type="number"
                   min="1"
                   max="48"
                   aria-invalid={!!form.formState.errors.parcelas}
+                  error={form.formState.errors.parcelas?.message}
                   disabled={isPending}
                   {...form.register("parcelas", {
                     setValueAs: (v: unknown) => {
@@ -181,9 +173,6 @@ export function CompraFormDialog({ open, onOpenChange, cartao, categorias }: Com
                     {parcelas}x de {formatCurrency(valorParcelaPreview)}
                   </p>
                 )}
-                {form.formState.errors.parcelas && (
-                  <p className="text-xs text-destructive">{form.formState.errors.parcelas.message}</p>
-                )}
               </div>
             )}
           </div>
@@ -195,44 +184,31 @@ export function CompraFormDialog({ open, onOpenChange, cartao, categorias }: Com
           )}
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="dataCompra">Data da compra</Label>
-              <Input
-                id="dataCompra"
-                type="date"
-                aria-invalid={!!form.formState.errors.dataCompra}
-                disabled={isPending}
-                {...form.register("dataCompra")}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="categoria">
-                Categoria{" "}
-                <span className="text-xs font-normal text-muted-foreground">(opcional)</span>
-              </Label>
-              <CategoriaSelect
-                id="categoria"
-                categorias={categorias}
-                isEntrada={false}
-                currentValue={null}
-                disabled={isPending}
-                {...form.register("categoria")}
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="responsavel">
-              Responsável pelo pagamento{" "}
-              <span className="text-xs font-normal text-muted-foreground">(opcional)</span>
-            </Label>
-            <Input
-              id="responsavel"
-              placeholder="Ex: João, Maria — deixe vazio se for você"
+            <FloatingInput
+              label="Data da compra"
+              id="dataCompra"
+              type="date"
+              aria-invalid={!!form.formState.errors.dataCompra}
               disabled={isPending}
-              {...form.register("responsavel")}
+              {...form.register("dataCompra")}
+            />
+            <FloatingCombobox
+              label="Categoria (opcional)"
+              options={categoriasSaida.map((c) => ({ value: c.nome, label: c.nome }))}
+              value={form.watch("categoria") ?? ""}
+              onChange={(v) => form.setValue("categoria", v, { shouldValidate: true })}
+              disabled={isPending}
+              error={form.formState.errors.categoria?.message}
             />
           </div>
+
+          <FloatingInput
+            label="Responsável pelo pagamento (opcional)"
+            id="responsavel"
+            placeholder="Ex: João, Maria — deixe vazio se for você"
+            disabled={isPending}
+            {...form.register("responsavel")}
+          />
 
           <DialogFooter>
             <Button

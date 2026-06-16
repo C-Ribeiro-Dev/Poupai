@@ -46,29 +46,29 @@ const TIPO_ICONE: Record<TipoSimulacao, React.ElementType> = {
 };
 
 const TIPO_COR: Record<TipoSimulacao, string> = {
-  compra_avista: "text-orange-600 bg-orange-50 border-orange-200",
-  compra_parcelada: "text-purple-600 bg-purple-50 border-purple-200",
-  emprestimo: "text-blue-600 bg-blue-50 border-blue-200",
-  despesa_fixa: "text-sky-600 bg-sky-50 border-sky-200",
-  investimento: "text-emerald-600 bg-emerald-50 border-emerald-200",
-  receita_adicional: "text-green-600 bg-green-50 border-green-200",
-  reducao_renda: "text-rose-600 bg-rose-50 border-rose-200",
-  pagamento_antecipado: "text-teal-600 bg-teal-50 border-teal-200",
+  compra_avista: "text-orange-600 dark:text-orange-400 bg-orange-500/10 border-orange-500/20",
+  compra_parcelada: "text-purple-600 dark:text-purple-400 bg-purple-500/10 border-purple-500/20",
+  emprestimo: "text-blue-600 dark:text-blue-400 bg-blue-500/10 border-blue-500/20",
+  despesa_fixa: "text-sky-600 dark:text-sky-400 bg-sky-500/10 border-sky-500/20",
+  investimento: "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
+  receita_adicional: "text-green-600 dark:text-green-400 bg-green-500/10 border-green-500/20",
+  reducao_renda: "text-rose-600 dark:text-rose-400 bg-rose-500/10 border-rose-500/20",
+  pagamento_antecipado: "text-teal-600 dark:text-teal-400 bg-teal-500/10 border-teal-500/20",
 };
 
 const RECOMENDACAO_CONFIG = {
   recomendado: {
     icon: CheckCircle2,
-    cor: "text-emerald-600",
-    bg: "bg-emerald-50 border-emerald-300",
+    cor: "text-emerald-600 dark:text-emerald-400",
+    bg: "bg-emerald-500/10 border-emerald-500/30",
     emoji: "🟢",
     label: "Recomendado",
     desc: "Sua situação financeira suporta este compromisso.",
   },
   atencao: {
     icon: AlertTriangle,
-    cor: "text-amber-600",
-    bg: "bg-amber-50 border-amber-300",
+    cor: "text-amber-600 dark:text-amber-400",
+    bg: "bg-amber-500/10 border-amber-500/30",
     emoji: "🟡",
     label: "Atenção",
     desc: "Verifique os impactos antes de decidir.",
@@ -238,7 +238,7 @@ function ResultadoPanel({ resultado, input }: { resultado: SimulacaoResultado; i
                 "flex items-start gap-2 rounded-lg px-3 py-2.5 text-sm",
                 a.severidade === "critico"
                   ? "bg-destructive/10 text-destructive"
-                  : "bg-amber-50 text-amber-800"
+                  : "bg-amber-500/10 text-amber-700 dark:text-amber-400"
               )}
             >
               {a.severidade === "critico" ? (

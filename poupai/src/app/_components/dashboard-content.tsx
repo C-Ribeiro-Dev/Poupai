@@ -34,6 +34,8 @@ import { PlanoAcaoCard } from "./plano-acao-card";
 import { getPlanoAcao } from "@/services/plano-acao";
 import { GastosInteligentesCard } from "./gastos-inteligentes-card";
 import { getGastosInteligentes } from "@/services/gastos-inteligentes";
+import { GastosCartaoCategoriaCard } from "./gastos-cartao-categoria-card";
+import { getGastosCartaoPorCategoria } from "@/services/gastos-cartao-categoria";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -363,7 +365,7 @@ export async function DashboardContent({
     mesRef.getFullYear() === now.getFullYear() && mesRef.getMonth() === now.getMonth();
   const periodo = parsePeriodo(periodoParam);
 
-  const [user, data, dinheiroDisponivel, compromissos, saldoProjetado, situacao, plano, gastos] = await Promise.all([
+  const [user, data, dinheiroDisponivel, compromissos, saldoProjetado, situacao, plano, gastos, gastosCartao] = await Promise.all([
     getCurrentUser(),
     getDashboardData(userId, mesRef),
     getDinheiroDisponivel(userId),
@@ -372,6 +374,7 @@ export async function DashboardContent({
     getSituacaoFinanceira(userId),
     getPlanoAcao(userId),
     getGastosInteligentes(userId),
+    getGastosCartaoPorCategoria(userId, "6m"),
   ]);
   const name = user?.user_metadata?.nome as string | undefined;
 
@@ -472,6 +475,7 @@ export async function DashboardContent({
         <SituacaoFinanceiraCard data={situacao} />
         <PlanoAcaoCard data={plano} />
         <GastosInteligentesCard data={gastos} />
+        <GastosCartaoCategoriaCard data={gastosCartao} />
       </div>
 
       {/* ── Insights do mês ── */}

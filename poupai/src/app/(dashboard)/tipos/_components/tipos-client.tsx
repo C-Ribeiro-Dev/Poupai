@@ -15,7 +15,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { FloatingInput } from "@/components/ui/floating-input";
 import { Badge } from "@/components/ui/badge";
 import { TipoFormDialog } from "./tipo-form-dialog";
 import { DeleteTipoDialog } from "./delete-tipo-dialog";
@@ -126,7 +126,8 @@ export function TiposClient({ tipos, initialSearch }: TiposClientProps) {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative w-full sm:max-w-xs">
           <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input
+          <FloatingInput
+            label=""
             placeholder="Buscar por nome..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}

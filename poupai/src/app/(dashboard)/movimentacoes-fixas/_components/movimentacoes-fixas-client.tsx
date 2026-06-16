@@ -19,7 +19,8 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { FloatingInput } from "@/components/ui/floating-input";
+import { FloatingCombobox } from "@/components/ui/floating-combobox";
 import {
   type MovimentacaoFixaRow,
   type MovimentacaoFixaStatus,
@@ -101,6 +102,21 @@ const SORT_LABELS: Record<SortOption, string> = {
   menor: "Menor valor",
   nome: "Nome (A–Z)",
 };
+
+const STATUS_OPTIONS: { value: FilterStatus; label: string }[] = [
+  { value: "todos", label: "Todos os status" },
+  { value: "ativas", label: "Ativas" },
+  { value: "pendente", label: "Pendente" },
+  { value: "vencido", label: "Vencido" },
+  { value: "pago", label: "Pago" },
+  { value: "inativo", label: "Inativo" },
+];
+
+const DIRECTION_OPTIONS: { value: FilterDirection; label: string }[] = [
+  { value: "todos", label: "Entrada e saída" },
+  { value: "entrada", label: "Apenas entradas" },
+  { value: "saida", label: "Apenas saídas" },
+];
 
 interface MovimentacoesFixasClientProps {
   movimentacoesFixas: MovimentacaoFixaRow[];
@@ -296,7 +312,8 @@ export function MovimentacoesFixasClient({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
+          <FloatingInput
+            label=""
             className="pl-9"
             placeholder="Buscar por nome, tipo, categoria..."
             value={search}
@@ -305,43 +322,35 @@ export function MovimentacoesFixasClient({
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value as FilterStatus)}
-            aria-label="Filtrar por status"
-            className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-          >
-            <option value="todos">Todos os status</option>
-            <option value="ativas">Ativas</option>
-            <option value="pendente">Pendente</option>
-            <option value="vencido">Vencido</option>
-            <option value="pago">Pago</option>
-            <option value="inativo">Inativo</option>
-          </select>
+          <div className="w-44">
+            <FloatingCombobox
+              label="Todos os status"
+              options={STATUS_OPTIONS}
+              value={filterStatus}
+              onChange={(v) => setFilterStatus((v || "todos") as FilterStatus)}
+            />
+          </div>
 
-          <select
-            value={filterDirection}
-            onChange={(e) => setFilterDirection(e.target.value as FilterDirection)}
-            aria-label="Filtrar por entrada ou saída"
-            className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-          >
-            <option value="todos">Entrada e saída</option>
-            <option value="entrada">Apenas entradas</option>
-            <option value="saida">Apenas saídas</option>
-          </select>
+          <div className="w-44">
+            <FloatingCombobox
+              label="Entrada e saída"
+              options={DIRECTION_OPTIONS}
+              value={filterDirection}
+              onChange={(v) => setFilterDirection((v || "todos") as FilterDirection)}
+            />
+          </div>
 
-          <select
-            value={sortOption}
-            onChange={(e) => setSortOption(e.target.value as SortOption)}
-            aria-label="Ordenar por"
-            className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-          >
-            {(Object.keys(SORT_LABELS) as SortOption[]).map((opt) => (
-              <option key={opt} value={opt}>
-                {SORT_LABELS[opt]}
-              </option>
-            ))}
-          </select>
+          <div className="w-44">
+            <FloatingCombobox
+              label="Ordenar por"
+              options={(Object.keys(SORT_LABELS) as SortOption[]).map((opt) => ({
+                value: opt,
+                label: SORT_LABELS[opt],
+              }))}
+              value={sortOption}
+              onChange={(v) => setSortOption((v || "recentes") as SortOption)}
+            />
+          </div>
         </div>
       </div>
 

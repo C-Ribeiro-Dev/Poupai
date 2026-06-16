@@ -6,16 +6,10 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { FloatingInput } from "@/components/ui/floating-input";
+import { FloatingCombobox } from "@/components/ui/floating-combobox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -32,8 +26,6 @@ import type { TipoMovimentacaoRow } from "@/types/tipos";
 import type { CategoriaRow } from "@/types/categorias";
 import type { ContaRow } from "@/types/contas";
 import { createMovimentacaoAction, updateMovimentacaoAction } from "@/actions/movimentacoes";
-
-import { CategoriaSelect } from "@/components/categoria-select";
 
 const todayStr = (): string => {
   const now = new Date();
@@ -122,156 +114,91 @@ export function MovimentacaoFormDialog({
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
           {/* Tipo */}
-          <div className="flex flex-col gap-1.5">
-            <Label>Tipo de movimentação</Label>
-            <div className="flex items-center gap-2">
+          <div className="flex items-end gap-2">
+            <div className="flex-1">
               <Controller
                 control={form.control}
                 name="tipoId"
-                render={({ field: { value, onChange } }) => (
-                  <Select
-                    value={value > 0 ? String(value) : null}
-                    onValueChange={(v: string | null) =>
-                      onChange(v !== null ? Number(v) : 0)
-                    }
+                render={({ field }) => (
+                  <FloatingCombobox
+                    label="Tipo de movimentação"
+                    options={tipos.map((t) => ({ value: String(t.id), label: t.nome }))}
+                    value={field.value ? String(field.value) : ""}
+                    onChange={(v) => field.onChange(v ? Number(v) : 0)}
                     disabled={isPending}
-                  >
-                    <SelectTrigger
-                      className={cn(
-                        "flex-1",
-                        form.formState.errors.tipoId && "border-destructive"
-                      )}
-                    >
-                      <SelectValue placeholder="Selecione um tipo..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {tipos.length === 0 ? (
-                        <div className="px-2 py-3 text-center text-xs text-muted-foreground">
-                          Nenhum tipo cadastrado
-                        </div>
-                      ) : (
-                        tipos.map((t) => (
-                          <SelectItem key={t.id} value={String(t.id)}>
-                            {t.nome}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
+                    error={form.formState.errors.tipoId?.message}
+                  />
                 )}
               />
-              {/* isEntrada badge — derivado automaticamente do tipo, nunca do form */}
-              {selectedTipo && (
-                <span
-                  className={cn(
-                    "shrink-0 rounded-md px-2.5 py-1 text-xs font-medium",
-                    selectedTipo.isEntrada
-                      ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-                      : "bg-red-500/15 text-red-700 dark:text-red-400"
-                  )}
-                >
-                  {selectedTipo.isEntrada ? "Entrada" : "Saída"}
-                </span>
-              )}
             </div>
-            {form.formState.errors.tipoId && (
-              <p className="text-xs text-destructive">
-                {form.formState.errors.tipoId.message}
-              </p>
+            {/* isEntrada badge — derivado automaticamente do tipo, nunca do form */}
+            {selectedTipo && (
+              <span
+                className={cn(
+                  "mb-0.5 shrink-0 rounded-md px-2.5 py-1 text-xs font-medium",
+                  selectedTipo.isEntrada
+                    ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                    : "bg-red-500/15 text-red-700 dark:text-red-400"
+                )}
+              >
+                {selectedTipo.isEntrada ? "Entrada" : "Saída"}
+              </span>
             )}
           </div>
 
           {/* Valor + Data */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="valor">Valor (R$)</Label>
-              <Input
-                id="valor"
-                type="number"
-                step="0.01"
-                min="0.01"
-                placeholder="0.00"
-                aria-invalid={!!form.formState.errors.valor}
-                disabled={isPending}
-                {...form.register("valor", { valueAsNumber: true })}
-              />
-              {form.formState.errors.valor && (
-                <p className="text-xs text-destructive">
-                  {form.formState.errors.valor.message}
-                </p>
-              )}
-            </div>
+            <FloatingInput
+              label="Valor (R$)"
+              id="valor"
+              type="number"
+              step="0.01"
+              min="0.01"
+              aria-invalid={!!form.formState.errors.valor}
+              error={form.formState.errors.valor?.message}
+              disabled={isPending}
+              {...form.register("valor", { valueAsNumber: true })}
+            />
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="data">Data</Label>
-              <Input
-                id="data"
-                type="date"
-                aria-invalid={!!form.formState.errors.data}
-                disabled={isPending}
-                {...form.register("data")}
-              />
-              {form.formState.errors.data && (
-                <p className="text-xs text-destructive">
-                  {form.formState.errors.data.message}
-                </p>
-              )}
-            </div>
+            <FloatingInput
+              label="Data"
+              id="data"
+              type="date"
+              aria-invalid={!!form.formState.errors.data}
+              error={form.formState.errors.data?.message}
+              disabled={isPending}
+              {...form.register("data")}
+            />
           </div>
 
           {/* Categoria */}
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="categoria">
-              Categoria{" "}
-              <span className="text-xs font-normal text-muted-foreground">(opcional)</span>
-            </Label>
-            <CategoriaSelect
-              id="categoria"
-              categorias={categorias}
-              isEntrada={selectedTipo?.isEntrada ?? null}
-              currentValue={movimentacao?.categoria ?? null}
-              disabled={isPending}
-              {...form.register("categoria")}
-            />
-            {form.formState.errors.categoria && (
-              <p className="text-xs text-destructive">
-                {form.formState.errors.categoria.message}
-              </p>
-            )}
-          </div>
+          <FloatingCombobox
+            label="Categoria (opcional)"
+            options={categorias
+              .filter((c) => c.ativo && (selectedTipo == null || c.tipo === "ambos" || (selectedTipo.isEntrada ? c.tipo === "entrada" : c.tipo === "saida")))
+              .map((c) => ({ value: c.nome, label: c.nome }))}
+            value={form.watch("categoria") ?? ""}
+            onChange={(v) => form.setValue("categoria", v, { shouldValidate: true })}
+            disabled={isPending}
+            error={form.formState.errors.categoria?.message}
+          />
 
           {/* Conta */}
           {contas.length > 0 && (
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="conta">
-                Conta{" "}
-                <span className="text-xs font-normal text-muted-foreground">(opcional)</span>
-              </Label>
-              <Controller
-                control={form.control}
-                name="contaId"
-                render={({ field: { value, onChange } }) => (
-                  <Select
-                    value={value ? String(value) : null}
-                    onValueChange={(v: string | null) =>
-                      onChange(v ? Number(v) : undefined)
-                    }
-                    disabled={isPending}
-                  >
-                    <SelectTrigger id="conta">
-                      <SelectValue placeholder="Selecione uma conta..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {contas.map((c) => (
-                        <SelectItem key={c.id} value={String(c.id)}>
-                          {c.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
+            <Controller
+              control={form.control}
+              name="contaId"
+              render={({ field }) => (
+                <FloatingCombobox
+                  label="Conta (opcional)"
+                  options={contas.map((c) => ({ value: String(c.id), label: c.nome }))}
+                  value={field.value ? String(field.value) : ""}
+                  onChange={(v) => field.onChange(v ? Number(v) : undefined)}
+                  disabled={isPending}
+                  error={form.formState.errors.contaId?.message}
+                />
+              )}
+            />
           )}
 
           {/* Descrição */}

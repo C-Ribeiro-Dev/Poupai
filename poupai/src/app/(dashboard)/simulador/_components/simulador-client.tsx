@@ -3,8 +3,7 @@ import { useState, useMemo } from "react";
 import { Calculator, ArrowDown, ArrowUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FloatingInput } from "@/components/ui/floating-input";
 
 const fmt = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
@@ -104,44 +103,38 @@ export function SimuladorClient() {
 
       {/* Inputs */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="valor">Valor (R$)</Label>
-          <Input
-            id="valor"
-            type="number"
-            min="0"
-            step="0.01"
-            value={valor}
-            onChange={(e) => setValor(e.target.value)}
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="taxa">Taxa de juros mensal (%)</Label>
-          <Input
-            id="taxa"
-            type="number"
-            min="0"
-            step="0.01"
-            value={taxa}
-            onChange={(e) => setTaxa(e.target.value)}
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="parcelas">Número de parcelas</Label>
-          <Input
-            id="parcelas"
-            type="number"
-            min="1"
-            max="600"
-            value={parcelas}
-            onChange={(e) => setParcelas(e.target.value)}
-          />
-        </div>
+        <FloatingInput
+          label="Valor (R$)"
+          id="valor"
+          type="number"
+          min="0"
+          step="0.01"
+          value={valor}
+          onChange={(e) => setValor(e.target.value)}
+        />
+        <FloatingInput
+          label="Taxa de juros mensal (%)"
+          id="taxa"
+          type="number"
+          min="0"
+          step="0.01"
+          value={taxa}
+          onChange={(e) => setTaxa(e.target.value)}
+        />
+        <FloatingInput
+          label="Número de parcelas"
+          id="parcelas"
+          type="number"
+          min="1"
+          max="600"
+          value={parcelas}
+          onChange={(e) => setParcelas(e.target.value)}
+        />
       </div>
 
       {/* Modo */}
       <div className="flex flex-col gap-2">
-        <Label>Modalidade</Label>
+        <p className="text-sm font-medium">Modalidade</p>
         <div className="flex flex-wrap gap-2">
           {modos.map((m) => (
             <button

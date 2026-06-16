@@ -5,8 +5,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, ArrowLeftRight } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FloatingInput } from "@/components/ui/floating-input";
+import { FloatingCombobox } from "@/components/ui/floating-combobox";
 import {
   Dialog,
   DialogContent,
@@ -65,9 +65,6 @@ export function TransferenciaDialog({ open, onOpenChange, contas }: Transferenci
     });
   }
 
-  const selectClass =
-    "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50";
-
   return (
     <Dialog open={open} onOpenChange={isPending ? undefined : onOpenChange}>
       <DialogContent className="sm:max-w-md" showCloseButton={!isPending}>
@@ -83,87 +80,51 @@ export function TransferenciaDialog({ open, onOpenChange, contas }: Transferenci
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="deContaId">De</Label>
-              <select
-                id="deContaId"
-                disabled={isPending}
-                aria-invalid={!!form.formState.errors.deContaId}
-                className={selectClass}
-                {...form.register("deContaId", { valueAsNumber: true })}
-              >
-                <option value={0}>Conta de origem...</option>
-                {contas.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nome}
-                  </option>
-                ))}
-              </select>
-              {form.formState.errors.deContaId && (
-                <p className="text-xs text-destructive">
-                  {form.formState.errors.deContaId.message}
-                </p>
-              )}
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="paraContaId">Para</Label>
-              <select
-                id="paraContaId"
-                disabled={isPending}
-                aria-invalid={!!form.formState.errors.paraContaId}
-                className={selectClass}
-                {...form.register("paraContaId", { valueAsNumber: true })}
-              >
-                <option value={0}>Conta de destino...</option>
-                {contas.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nome}
-                  </option>
-                ))}
-              </select>
-              {form.formState.errors.paraContaId && (
-                <p className="text-xs text-destructive">
-                  {form.formState.errors.paraContaId.message}
-                </p>
-              )}
-            </div>
+            <FloatingCombobox
+              label="De"
+              options={contas.map((c) => ({ value: String(c.id), label: c.nome }))}
+              value={form.watch("deContaId") ? String(form.watch("deContaId")) : ""}
+              onChange={(v) => form.setValue("deContaId", v ? Number(v) : 0, { shouldValidate: true })}
+              disabled={isPending}
+              error={form.formState.errors.deContaId?.message}
+            />
+            <FloatingCombobox
+              label="Para"
+              options={contas.map((c) => ({ value: String(c.id), label: c.nome }))}
+              value={form.watch("paraContaId") ? String(form.watch("paraContaId")) : ""}
+              onChange={(v) => form.setValue("paraContaId", v ? Number(v) : 0, { shouldValidate: true })}
+              disabled={isPending}
+              error={form.formState.errors.paraContaId?.message}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="valor">Valor (R$)</Label>
-              <Input
-                id="valor"
-                type="number"
-                step="0.01"
-                min="0.01"
-                placeholder="0.00"
-                aria-invalid={!!form.formState.errors.valor}
-                disabled={isPending}
-                {...form.register("valor", { valueAsNumber: true })}
-              />
-              {form.formState.errors.valor && (
-                <p className="text-xs text-destructive">{form.formState.errors.valor.message}</p>
-              )}
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="data">Data</Label>
-              <Input id="data" type="date" disabled={isPending} {...form.register("data")} />
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="descricao">
-              Descrição{" "}
-              <span className="text-xs font-normal text-muted-foreground">(opcional)</span>
-            </Label>
-            <Input
-              id="descricao"
-              placeholder="Ex: Reserva do mês"
+            <FloatingInput
+              label="Valor (R$)"
+              id="valor"
+              type="number"
+              step="0.01"
+              min="0.01"
+              aria-invalid={!!form.formState.errors.valor}
+              error={form.formState.errors.valor?.message}
               disabled={isPending}
-              {...form.register("descricao")}
+              {...form.register("valor", { valueAsNumber: true })}
+            />
+            <FloatingInput
+              label="Data"
+              id="data"
+              type="date"
+              disabled={isPending}
+              {...form.register("data")}
             />
           </div>
+
+          <FloatingInput
+            label="Descrição (opcional)"
+            id="descricao"
+            disabled={isPending}
+            {...form.register("descricao")}
+          />
 
           <DialogFooter>
             <Button

@@ -5,8 +5,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FloatingInput } from "@/components/ui/floating-input";
+import { FloatingCombobox } from "@/components/ui/floating-combobox";
 import {
   Dialog,
   DialogContent,
@@ -70,62 +70,45 @@ export function AtivoFormDialog({ open, onOpenChange, ativo }: AtivoFormDialogPr
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="nome">Nome</Label>
-            <Input
-              id="nome"
-              placeholder="Ex: Tesouro Selic, PETR4, Bitcoin"
-              aria-invalid={!!form.formState.errors.nome}
-              disabled={isPending}
-              {...form.register("nome")}
-            />
-            {form.formState.errors.nome && (
-              <p className="text-xs text-destructive">{form.formState.errors.nome.message}</p>
-            )}
-          </div>
+          <FloatingInput
+            label="Nome"
+            id="nome"
+            aria-invalid={!!form.formState.errors.nome}
+            error={form.formState.errors.nome?.message}
+            disabled={isPending}
+            {...form.register("nome")}
+          />
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="classe">Classe</Label>
-            <select
-              id="classe"
-              disabled={isPending}
-              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-              {...form.register("classe")}
-            >
-              {CLASSES_INVESTIMENTO.map((c) => (
-                <option key={c.key} value={c.key}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          <FloatingCombobox
+            label="Classe"
+            options={CLASSES_INVESTIMENTO.map((c) => ({ value: c.key, label: c.label }))}
+            value={form.watch("classe") ?? "renda_fixa"}
+            onChange={(v) => form.setValue("classe", v as AtivoFormData["classe"], { shouldValidate: true })}
+            disabled={isPending}
+            error={form.formState.errors.classe?.message}
+          />
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="valorAtual">
-              Valor atual (R$){" "}
-              <span className="text-xs font-normal text-muted-foreground">(opcional)</span>
-            </Label>
-            <Input
-              id="valorAtual"
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="Quanto vale hoje"
-              aria-invalid={!!form.formState.errors.valorAtual}
-              disabled={isPending}
-              {...form.register("valorAtual", {
-                setValueAs: (v: unknown) => {
-                  if (v === "" || v === null || v === undefined) return undefined;
-                  const n = Number(v);
-                  return isNaN(n) ? undefined : n;
-                },
-              })}
-            />
-            <p className="text-xs text-muted-foreground">
-              Atualize de tempos em tempos para calcular a rentabilidade. Sem este valor, usamos o
-              total aportado.
-            </p>
-          </div>
+          <FloatingInput
+            label="Valor atual (R$) (opcional)"
+            id="valorAtual"
+            type="number"
+            step="0.01"
+            min="0"
+            aria-invalid={!!form.formState.errors.valorAtual}
+            error={form.formState.errors.valorAtual?.message}
+            disabled={isPending}
+            {...form.register("valorAtual", {
+              setValueAs: (v: unknown) => {
+                if (v === "" || v === null || v === undefined) return undefined;
+                const n = Number(v);
+                return isNaN(n) ? undefined : n;
+              },
+            })}
+          />
+          <p className="text-xs text-muted-foreground">
+            Atualize de tempos em tempos para calcular a rentabilidade. Sem este valor, usamos o
+            total aportado.
+          </p>
 
           <DialogFooter>
             <Button

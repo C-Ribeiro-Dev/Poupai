@@ -6,16 +6,10 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { FloatingInput } from "@/components/ui/floating-input";
+import { FloatingCombobox } from "@/components/ui/floating-combobox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -34,8 +28,6 @@ import {
   createMovimentacaoFixaAction,
   updateMovimentacaoFixaAction,
 } from "@/actions/movimentacoes-fixas";
-
-import { CategoriaSelect } from "@/components/categoria-select";
 
 const toDateInputValue = (date: Date): string => {
   const d = new Date(date);
@@ -122,183 +114,112 @@ export function MovimentacaoFixaFormDialog({
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
           {/* Nome */}
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="nome">Nome</Label>
-            <Input
-              id="nome"
-              placeholder="Ex: Aluguel, Netflix, Salário"
-              aria-invalid={!!form.formState.errors.nome}
-              disabled={isPending}
-              {...form.register("nome")}
-            />
-            {form.formState.errors.nome && (
-              <p className="text-xs text-destructive">{form.formState.errors.nome.message}</p>
-            )}
-          </div>
+          <FloatingInput
+            label="Nome"
+            id="nome"
+            aria-invalid={!!form.formState.errors.nome}
+            error={form.formState.errors.nome?.message}
+            disabled={isPending}
+            {...form.register("nome")}
+          />
 
           {/* Tipo */}
-          <div className="flex flex-col gap-1.5">
-            <Label>Tipo de movimentação</Label>
-            <div className="flex items-center gap-2">
+          <div className="flex items-end gap-2">
+            <div className="flex-1">
               <Controller
                 control={form.control}
                 name="tipoMovimentacaoId"
-                render={({ field: { value, onChange } }) => (
-                  <Select
-                    value={value > 0 ? String(value) : null}
-                    onValueChange={(v: string | null) =>
-                      onChange(v !== null ? Number(v) : 0)
-                    }
+                render={({ field }) => (
+                  <FloatingCombobox
+                    label="Tipo de movimentação"
+                    options={tipos.map((t) => ({ value: String(t.id), label: t.nome }))}
+                    value={field.value ? String(field.value) : ""}
+                    onChange={(v) => field.onChange(v ? Number(v) : 0)}
                     disabled={isPending}
-                  >
-                    <SelectTrigger
-                      className={cn(
-                        "flex-1",
-                        form.formState.errors.tipoMovimentacaoId && "border-destructive"
-                      )}
-                    >
-                      <SelectValue placeholder="Selecione um tipo..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {tipos.length === 0 ? (
-                        <div className="px-2 py-3 text-center text-xs text-muted-foreground">
-                          Nenhum tipo cadastrado
-                        </div>
-                      ) : (
-                        tipos.map((t) => (
-                          <SelectItem key={t.id} value={String(t.id)}>
-                            {t.nome}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
+                    error={form.formState.errors.tipoMovimentacaoId?.message}
+                  />
                 )}
               />
-              {/* isEntrada badge — derivado automaticamente do tipo, nunca do formulário */}
-              {selectedTipo && (
-                <span
-                  className={cn(
-                    "shrink-0 rounded-md px-2.5 py-1 text-xs font-medium",
-                    selectedTipo.isEntrada
-                      ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-                      : "bg-red-500/15 text-red-700 dark:text-red-400"
-                  )}
-                >
-                  {selectedTipo.isEntrada ? "Entrada" : "Saída"}
-                </span>
-              )}
             </div>
-            {form.formState.errors.tipoMovimentacaoId && (
-              <p className="text-xs text-destructive">
-                {form.formState.errors.tipoMovimentacaoId.message}
-              </p>
+            {/* isEntrada badge — derivado automaticamente do tipo, nunca do formulário */}
+            {selectedTipo && (
+              <span
+                className={cn(
+                  "mb-0.5 shrink-0 rounded-md px-2.5 py-1 text-xs font-medium",
+                  selectedTipo.isEntrada
+                    ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                    : "bg-red-500/15 text-red-700 dark:text-red-400"
+                )}
+              >
+                {selectedTipo.isEntrada ? "Entrada" : "Saída"}
+              </span>
             )}
           </div>
 
           {/* Valor + Dia vencimento */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="valor">Valor (R$)</Label>
-              <Input
-                id="valor"
-                type="number"
-                step="0.01"
-                min="0.01"
-                placeholder="0.00"
-                aria-invalid={!!form.formState.errors.valor}
-                disabled={isPending}
-                {...form.register("valor", { valueAsNumber: true })}
-              />
-              {form.formState.errors.valor && (
-                <p className="text-xs text-destructive">{form.formState.errors.valor.message}</p>
-              )}
-            </div>
+            <FloatingInput
+              label="Valor (R$)"
+              id="valor"
+              type="number"
+              step="0.01"
+              min="0.01"
+              aria-invalid={!!form.formState.errors.valor}
+              error={form.formState.errors.valor?.message}
+              disabled={isPending}
+              {...form.register("valor", { valueAsNumber: true })}
+            />
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="diaVencimento">
-                Dia de vencimento{" "}
-                <span className="text-xs font-normal text-muted-foreground">(opcional)</span>
-              </Label>
-              <Input
-                id="diaVencimento"
-                type="number"
-                min="1"
-                max="31"
-                placeholder="Ex: 5, 15, 30"
-                aria-invalid={!!form.formState.errors.diaVencimento}
-                disabled={isPending}
-                {...form.register("diaVencimento", {
-                  setValueAs: (v: unknown) => {
-                    if (v === "" || v === null || v === undefined) return undefined;
-                    const n = parseInt(String(v), 10);
-                    return isNaN(n) ? undefined : n;
-                  },
-                })}
-              />
-              {form.formState.errors.diaVencimento && (
-                <p className="text-xs text-destructive">
-                  {form.formState.errors.diaVencimento.message}
-                </p>
-              )}
-            </div>
+            <FloatingInput
+              label="Dia de vencimento (opcional)"
+              id="diaVencimento"
+              type="number"
+              min="1"
+              max="31"
+              aria-invalid={!!form.formState.errors.diaVencimento}
+              error={form.formState.errors.diaVencimento?.message}
+              disabled={isPending}
+              {...form.register("diaVencimento", {
+                setValueAs: (v: unknown) => {
+                  if (v === "" || v === null || v === undefined) return undefined;
+                  const n = parseInt(String(v), 10);
+                  return isNaN(n) ? undefined : n;
+                },
+              })}
+            />
           </div>
 
           {/* Data fim + Forma de pagamento */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="dataFim">
-                Data fim{" "}
-                <span className="text-xs font-normal text-muted-foreground">(opcional)</span>
-              </Label>
-              <Input
-                id="dataFim"
-                type="date"
-                disabled={isPending}
-                {...form.register("dataFim")}
-              />
-            </div>
+            <FloatingInput
+              label="Data fim (opcional)"
+              id="dataFim"
+              type="date"
+              disabled={isPending}
+              {...form.register("dataFim")}
+            />
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="formaPagamento">
-                Forma de pagamento{" "}
-                <span className="text-xs font-normal text-muted-foreground">(opcional)</span>
-              </Label>
-              <Input
-                id="formaPagamento"
-                placeholder="Ex: Pix, Boleto, Débito"
-                aria-invalid={!!form.formState.errors.formaPagamento}
-                disabled={isPending}
-                {...form.register("formaPagamento")}
-              />
-              {form.formState.errors.formaPagamento && (
-                <p className="text-xs text-destructive">
-                  {form.formState.errors.formaPagamento.message}
-                </p>
-              )}
-            </div>
+            <FloatingInput
+              label="Forma de pagamento (opcional)"
+              id="formaPagamento"
+              aria-invalid={!!form.formState.errors.formaPagamento}
+              error={form.formState.errors.formaPagamento?.message}
+              disabled={isPending}
+              {...form.register("formaPagamento")}
+            />
           </div>
 
           {/* Categoria */}
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="categoria">
-              Categoria{" "}
-              <span className="text-xs font-normal text-muted-foreground">(opcional)</span>
-            </Label>
-            <CategoriaSelect
-              id="categoria"
-              categorias={categorias}
-              isEntrada={selectedTipo?.isEntrada ?? null}
-              currentValue={movimentacaoFixa?.categoria ?? null}
-              disabled={isPending}
-              {...form.register("categoria")}
-            />
-            {form.formState.errors.categoria && (
-              <p className="text-xs text-destructive">
-                {form.formState.errors.categoria.message}
-              </p>
-            )}
-          </div>
+          <FloatingCombobox
+            label="Categoria (opcional)"
+            options={categorias
+              .filter((c) => c.ativo && (selectedTipo == null || c.tipo === "ambos" || (selectedTipo.isEntrada ? c.tipo === "entrada" : c.tipo === "saida")))
+              .map((c) => ({ value: c.nome, label: c.nome }))}
+            value={form.watch("categoria") ?? ""}
+            onChange={(v) => form.setValue("categoria", v, { shouldValidate: true })}
+            disabled={isPending}
+            error={form.formState.errors.categoria?.message}
+          />
 
           {/* Observações */}
           <div className="flex flex-col gap-1.5">

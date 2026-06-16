@@ -32,16 +32,16 @@ const DIAGNOSTICO_CONFIG: Record<
   estavel: {
     emoji: "🟢",
     label: "Estável",
-    cor: "text-emerald-600",
-    bg: "bg-emerald-50 border-emerald-300",
+    cor: "text-emerald-600 dark:text-emerald-400",
+    bg: "bg-emerald-500/10 border-emerald-500/30",
     icon: CheckCircle2,
     descricao: "Sua situação financeira está saudável. Continue assim e busque evoluir.",
   },
   atencao: {
     emoji: "🟡",
     label: "Atenção",
-    cor: "text-amber-600",
-    bg: "bg-amber-50 border-amber-300",
+    cor: "text-amber-600 dark:text-amber-400",
+    bg: "bg-amber-500/10 border-amber-500/30",
     icon: AlertTriangle,
     descricao: "Há pontos a melhorar na sua saúde financeira. Acompanhe os itens abaixo.",
   },
@@ -56,8 +56,8 @@ const DIAGNOSTICO_CONFIG: Record<
 };
 
 const STATUS_CONFIG: Record<StatusIndicador, { cor: string; bg: string; label: string }> = {
-  verde: { cor: "text-emerald-600", bg: "bg-emerald-50 border-emerald-200", label: "Bom" },
-  amarelo: { cor: "text-amber-600", bg: "bg-amber-50 border-amber-200", label: "Atenção" },
+  verde: { cor: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20", label: "Bom" },
+  amarelo: { cor: "text-amber-600 dark:text-amber-400", bg: "bg-amber-500/10 border-amber-500/20", label: "Atenção" },
   vermelho: { cor: "text-destructive", bg: "bg-destructive/10 border-destructive/30", label: "Crítico" },
 };
 
@@ -66,8 +66,8 @@ const PRIORIDADE_CONFIG: Record<
   { label: string; bg: string; cor: string }
 > = {
   alta: { label: "Alta", bg: "bg-destructive/10", cor: "text-destructive" },
-  media: { label: "Média", bg: "bg-amber-50", cor: "text-amber-700" },
-  baixa: { label: "Baixa", bg: "bg-sky-50", cor: "text-sky-700" },
+  media: { label: "Média", bg: "bg-amber-500/10", cor: "text-amber-700 dark:text-amber-400" },
+  baixa: { label: "Baixa", bg: "bg-sky-500/10", cor: "text-sky-700 dark:text-sky-400" },
 };
 
 function IndicadorCard({
@@ -193,7 +193,7 @@ export default async function SituacaoFinanceiraPage() {
                   "flex gap-3 rounded-xl border p-4",
                   p.severidade === "critico"
                     ? "border-destructive/30 bg-destructive/5"
-                    : "border-amber-200 bg-amber-50"
+                    : "border-amber-500/20 bg-amber-500/10"
                 )}
               >
                 {p.severidade === "critico" ? (
@@ -222,11 +222,11 @@ export default async function SituacaoFinanceiraPage() {
             {data.pontosPositivos.map((p, i) => (
               <div
                 key={i}
-                className="flex gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4"
+                className="flex gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4"
               >
                 <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
                 <div>
-                  <p className="text-sm font-semibold text-emerald-800">{p.titulo}</p>
+                  <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">{p.titulo}</p>
                   <p className="text-sm text-muted-foreground">{p.descricao}</p>
                 </div>
               </div>

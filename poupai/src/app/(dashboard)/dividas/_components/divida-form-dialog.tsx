@@ -5,8 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Plus, Save } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FloatingInput } from "@/components/ui/floating-input";
 import {
   Dialog,
   DialogContent,
@@ -105,55 +104,89 @@ export function DividaFormDialog({ open, onOpenChange, divida }: Props) {
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2 flex flex-col gap-1.5">
-              <Label htmlFor="credor">Credor *</Label>
-              <Input id="credor" placeholder="Ex: Banco, loja, pessoa..." disabled={isPending} {...form.register("credor")} />
-              {err.credor && <p className="text-xs text-destructive">{err.credor.message}</p>}
+            <div className="col-span-2">
+              <FloatingInput
+                label="Credor *"
+                id="credor"
+                error={err.credor?.message}
+                disabled={isPending}
+                {...form.register("credor")}
+              />
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="valorTotal">Valor total *</Label>
-              <Input id="valorTotal" type="number" step="0.01" min="0.01" disabled={isPending} {...form.register("valorTotal", { valueAsNumber: true })} />
-              {err.valorTotal && <p className="text-xs text-destructive">{err.valorTotal.message}</p>}
-            </div>
+            <FloatingInput
+              label="Valor total *"
+              id="valorTotal"
+              type="number"
+              step="0.01"
+              min="0.01"
+              error={err.valorTotal?.message}
+              disabled={isPending}
+              {...form.register("valorTotal", { valueAsNumber: true })}
+            />
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="taxaJurosMensal">Juros mensal (%)</Label>
-              <Input id="taxaJurosMensal" type="number" step="0.01" min="0" placeholder="0 = sem juros" disabled={isPending} {...form.register("taxaJurosMensal", { valueAsNumber: true })} />
-              {err.taxaJurosMensal && <p className="text-xs text-destructive">{err.taxaJurosMensal.message}</p>}
-            </div>
+            <FloatingInput
+              label="Juros mensal (%)"
+              id="taxaJurosMensal"
+              type="number"
+              step="0.01"
+              min="0"
+              error={err.taxaJurosMensal?.message}
+              disabled={isPending}
+              {...form.register("taxaJurosMensal", { valueAsNumber: true })}
+            />
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="nParcelas">Total de parcelas *</Label>
-              <Input id="nParcelas" type="number" min="1" disabled={isPending} {...form.register("nParcelas", { valueAsNumber: true })} />
-              {err.nParcelas && <p className="text-xs text-destructive">{err.nParcelas.message}</p>}
-            </div>
+            <FloatingInput
+              label="Total de parcelas *"
+              id="nParcelas"
+              type="number"
+              min="1"
+              error={err.nParcelas?.message}
+              disabled={isPending}
+              {...form.register("nParcelas", { valueAsNumber: true })}
+            />
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="parcelasPagas">Parcelas já pagas</Label>
-              <Input id="parcelasPagas" type="number" min="0" disabled={isPending} {...form.register("parcelasPagas", { valueAsNumber: true })} />
-              {err.parcelasPagas && <p className="text-xs text-destructive">{err.parcelasPagas.message}</p>}
-            </div>
+            <FloatingInput
+              label="Parcelas já pagas"
+              id="parcelasPagas"
+              type="number"
+              min="0"
+              error={err.parcelasPagas?.message}
+              disabled={isPending}
+              {...form.register("parcelasPagas", { valueAsNumber: true })}
+            />
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="dataInicio">Data de início *</Label>
-              <Input id="dataInicio" type="date" disabled={isPending} {...form.register("dataInicio")} />
-              {err.dataInicio && <p className="text-xs text-destructive">{err.dataInicio.message}</p>}
-            </div>
+            <FloatingInput
+              label="Data de início *"
+              id="dataInicio"
+              type="date"
+              error={err.dataInicio?.message}
+              disabled={isPending}
+              {...form.register("dataInicio")}
+            />
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="dataProxVencimento">Próximo vencimento</Label>
-              <Input id="dataProxVencimento" type="date" disabled={isPending} {...form.register("dataProxVencimento")} />
-            </div>
+            <FloatingInput
+              label="Próximo vencimento"
+              id="dataProxVencimento"
+              type="date"
+              disabled={isPending}
+              {...form.register("dataProxVencimento")}
+            />
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="categoria">Categoria</Label>
-              <Input id="categoria" placeholder="Ex: Empréstimo, financiamento..." disabled={isPending} {...form.register("categoria")} />
-            </div>
+            <FloatingInput
+              label="Categoria"
+              id="categoria"
+              disabled={isPending}
+              {...form.register("categoria")}
+            />
 
-            <div className="col-span-2 flex flex-col gap-1.5">
-              <Label htmlFor="descricao">Descrição</Label>
-              <Input id="descricao" placeholder="Observação rápida..." disabled={isPending} {...form.register("descricao")} />
+            <div className="col-span-2">
+              <FloatingInput
+                label="Descrição"
+                id="descricao"
+                disabled={isPending}
+                {...form.register("descricao")}
+              />
             </div>
           </div>
 

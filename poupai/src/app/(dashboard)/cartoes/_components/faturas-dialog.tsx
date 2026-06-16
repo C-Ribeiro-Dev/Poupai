@@ -16,8 +16,8 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FloatingInput } from "@/components/ui/floating-input";
+import { FloatingCombobox } from "@/components/ui/floating-combobox";
 import {
   Dialog,
   DialogContent,
@@ -316,11 +316,9 @@ export function FaturasDialog({ open, onOpenChange, cartao, tipos }: FaturasDial
             {podePagar && (
               <div className="flex flex-col gap-3">
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="valorPagamento">
-                      Valor a pagar (R$)
-                    </Label>
-                    <Input
+                  <div>
+                    <FloatingInput
+                      label="Valor a pagar (R$)"
                       id="valorPagamento"
                       type="number"
                       step="0.01"
@@ -336,23 +334,13 @@ export function FaturasDialog({ open, onOpenChange, cartao, tipos }: FaturasDial
                       </p>
                     )}
                   </div>
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="tipoPagamento">Tipo de movimentação</Label>
-                    <select
-                      id="tipoPagamento"
-                      value={tipoId || ""}
-                      onChange={(e) => setTipoId(Number(e.target.value) || 0)}
-                      disabled={isPending}
-                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <option value="">Selecione o tipo (saída)...</option>
-                      {tiposSaida.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.nome}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <FloatingCombobox
+                    label="Tipo de movimentação"
+                    options={tiposSaida.map((t) => ({ value: String(t.id), label: t.nome }))}
+                    value={tipoId ? String(tipoId) : ""}
+                    onChange={(v) => setTipoId(v ? Number(v) : 0)}
+                    disabled={isPending}
+                  />
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Ao registrar, uma movimentação de saída é criada automaticamente.

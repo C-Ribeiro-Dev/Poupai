@@ -16,8 +16,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FloatingInput } from "@/components/ui/floating-input";
 import {
   Dialog,
   DialogContent,
@@ -343,51 +342,36 @@ function NovoUsuarioDialog({
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="nome">Nome</Label>
-            <Input
-              id="nome"
-              placeholder="Ex: Maria Silva"
-              aria-invalid={!!form.formState.errors.nome}
-              disabled={isPending}
-              {...form.register("nome")}
-            />
-            {form.formState.errors.nome && (
-              <p className="text-xs text-destructive">{form.formState.errors.nome.message}</p>
-            )}
-          </div>
+          <FloatingInput
+            label="Nome"
+            id="nome"
+            aria-invalid={!!form.formState.errors.nome}
+            error={form.formState.errors.nome?.message}
+            disabled={isPending}
+            {...form.register("nome")}
+          />
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="email">E-mail</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="email@exemplo.com"
-              autoComplete="off"
-              aria-invalid={!!form.formState.errors.email}
-              disabled={isPending}
-              {...form.register("email")}
-            />
-            {form.formState.errors.email && (
-              <p className="text-xs text-destructive">{form.formState.errors.email.message}</p>
-            )}
-          </div>
+          <FloatingInput
+            label="E-mail"
+            id="email"
+            type="email"
+            autoComplete="off"
+            aria-invalid={!!form.formState.errors.email}
+            error={form.formState.errors.email?.message}
+            disabled={isPending}
+            {...form.register("email")}
+          />
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="senha">Senha</Label>
-            <Input
-              id="senha"
-              type="password"
-              placeholder="Mínimo de 6 caracteres"
-              autoComplete="new-password"
-              aria-invalid={!!form.formState.errors.senha}
-              disabled={isPending}
-              {...form.register("senha")}
-            />
-            {form.formState.errors.senha && (
-              <p className="text-xs text-destructive">{form.formState.errors.senha.message}</p>
-            )}
-          </div>
+          <FloatingInput
+            label="Senha"
+            id="senha"
+            type="password"
+            autoComplete="new-password"
+            aria-invalid={!!form.formState.errors.senha}
+            error={form.formState.errors.senha?.message}
+            disabled={isPending}
+            {...form.register("senha")}
+          />
 
           <DialogFooter>
             <Button

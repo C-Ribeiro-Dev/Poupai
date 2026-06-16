@@ -5,8 +5,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FloatingInput } from "@/components/ui/floating-input";
+import { FloatingCombobox } from "@/components/ui/floating-combobox";
 import {
   Dialog,
   DialogContent,
@@ -68,6 +68,10 @@ export function OrcamentoFormDialog({
     });
   }
 
+  const categoriaOptions = isEditing
+    ? [{ value: orcamento.categoria, label: orcamento.categoria }, ...categoriasDisponiveis.map((c) => ({ value: c.nome, label: c.nome }))]
+    : categoriasDisponiveis.map((c) => ({ value: c.nome, label: c.nome }));
+
   return (
     <Dialog open={open} onOpenChange={isPending ? undefined : onOpenChange}>
       <DialogContent className="sm:max-w-md" showCloseButton={!isPending}>
@@ -82,27 +86,14 @@ export function OrcamentoFormDialog({
         <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
           {/* Categoria */}
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="categoria">Categoria</Label>
-            <select
-              id="categoria"
+            <FloatingCombobox
+              label="Categoria"
+              options={categoriaOptions}
+              value={form.watch("categoria") ?? ""}
+              onChange={(v) => form.setValue("categoria", v, { shouldValidate: true })}
               disabled={isPending || isEditing}
-              aria-invalid={!!form.formState.errors.categoria}
-              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-              {...form.register("categoria")}
-            >
-              <option value="">Selecione uma categoria...</option>
-              {isEditing && <option value={orcamento.categoria}>{orcamento.categoria}</option>}
-              {categoriasDisponiveis.map((c) => (
-                <option key={c.id} value={c.nome}>
-                  {c.nome}
-                </option>
-              ))}
-            </select>
-            {form.formState.errors.categoria && (
-              <p className="text-xs text-destructive">
-                {form.formState.errors.categoria.message}
-              </p>
-            )}
+              error={form.formState.errors.categoria?.message}
+            />
             {!isEditing && categoriasDisponiveis.length === 0 && (
               <p className="text-xs text-muted-foreground">
                 Todas as categorias de saída já têm orçamento definido.
@@ -111,22 +102,17 @@ export function OrcamentoFormDialog({
           </div>
 
           {/* Valor */}
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="valor">Limite mensal (R$)</Label>
-            <Input
-              id="valor"
-              type="number"
-              step="0.01"
-              min="0.01"
-              placeholder="0.00"
-              aria-invalid={!!form.formState.errors.valor}
-              disabled={isPending}
-              {...form.register("valor", { valueAsNumber: true })}
-            />
-            {form.formState.errors.valor && (
-              <p className="text-xs text-destructive">{form.formState.errors.valor.message}</p>
-            )}
-          </div>
+          <FloatingInput
+            label="Limite mensal (R$)"
+            id="valor"
+            type="number"
+            step="0.01"
+            min="0.01"
+            aria-invalid={!!form.formState.errors.valor}
+            error={form.formState.errors.valor?.message}
+            disabled={isPending}
+            {...form.register("valor", { valueAsNumber: true })}
+          />
 
           <DialogFooter>
             <Button

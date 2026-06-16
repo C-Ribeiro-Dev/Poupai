@@ -7,7 +7,16 @@ function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
     <textarea
       data-slot="textarea"
       className={cn(
-        "flex field-sizing-content min-h-16 w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40",
+        "flex field-sizing-content min-h-20 w-full rounded-xl border border-border/60 bg-foreground/[0.03] px-3.5 py-2.5 text-sm transition-all duration-200 outline-none resize-none",
+        "placeholder:text-muted-foreground/50",
+        "hover:border-ring/50 hover:bg-foreground/[0.05]",
+        "focus-visible:border-ring focus-visible:bg-background focus-visible:ring-4 focus-visible:ring-ring/15",
+        "disabled:cursor-not-allowed disabled:opacity-40",
+        "aria-invalid:border-destructive/70 aria-invalid:ring-4 aria-invalid:ring-destructive/15",
+        "dark:border-white/10 dark:bg-white/[0.06] dark:placeholder:text-white/30",
+        "dark:hover:border-white/20 dark:hover:bg-white/[0.08]",
+        "dark:focus-visible:border-ring dark:focus-visible:bg-white/[0.07] dark:focus-visible:ring-ring/20",
+        "dark:aria-invalid:border-destructive/60 dark:aria-invalid:ring-destructive/20",
         className
       )}
       {...props}

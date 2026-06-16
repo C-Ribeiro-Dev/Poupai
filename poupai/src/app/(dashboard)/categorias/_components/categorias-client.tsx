@@ -3,7 +3,8 @@ import { useMemo, useState } from "react";
 import { Plus, Search, Shapes, Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { FloatingInput } from "@/components/ui/floating-input";
+import { FloatingCombobox } from "@/components/ui/floating-combobox";
 import type { CategoriaRow } from "@/types/categorias";
 import { getCategoriaIcon } from "@/lib/categorias-config";
 import { CategoriaFormDialog } from "./categoria-form-dialog";
@@ -31,6 +32,12 @@ const tipoBadge: Record<string, string> = {
 };
 
 type StatusFiltro = "todas" | "ativas" | "inativas";
+
+const STATUS_FILTRO_OPTIONS: { value: StatusFiltro; label: string }[] = [
+  { value: "todas", label: "Todas" },
+  { value: "ativas", label: "Ativas" },
+  { value: "inativas", label: "Inativas" },
+];
 
 interface CategoriasClientProps {
   categorias: CategoriaRow[];
@@ -99,23 +106,22 @@ export function CategoriasClient({ categorias, initialSearch }: CategoriasClient
         <div className="flex items-center gap-2">
           <div className="relative flex-1 sm:w-56 sm:flex-none">
             <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input
+            <FloatingInput
+              label=""
               placeholder="Buscar categoria..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="h-8 pl-8 text-sm"
             />
           </div>
-          <select
-            value={statusFiltro}
-            onChange={(e) => setStatusFiltro(e.target.value as StatusFiltro)}
-            aria-label="Filtrar por status"
-            className="h-8 shrink-0 rounded-lg border border-input bg-transparent px-2.5 text-xs text-muted-foreground outline-none transition-colors focus:border-ring focus:text-foreground dark:bg-input/30"
-          >
-            <option value="todas">Todas</option>
-            <option value="ativas">Ativas</option>
-            <option value="inativas">Inativas</option>
-          </select>
+          <div className="w-32 shrink-0">
+            <FloatingCombobox
+              label="Todas"
+              options={STATUS_FILTRO_OPTIONS}
+              value={statusFiltro}
+              onChange={(v) => setStatusFiltro((v || "todas") as StatusFiltro)}
+            />
+          </div>
         </div>
       </div>
 

@@ -6,7 +6,7 @@ import { Loader2, Check } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { FloatingInput } from "@/components/ui/floating-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -77,46 +77,34 @@ export function MetaFormDialog({ open, onOpenChange, meta }: MetaFormDialogProps
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="nome">Nome</Label>
-            <Input
-              id="nome"
-              placeholder="Ex: Reserva de emergência, Viagem"
-              aria-invalid={!!form.formState.errors.nome}
-              disabled={isPending}
-              {...form.register("nome")}
-            />
-            {form.formState.errors.nome && (
-              <p className="text-xs text-destructive">{form.formState.errors.nome.message}</p>
-            )}
-          </div>
+          <FloatingInput
+            label="Nome"
+            id="nome"
+            aria-invalid={!!form.formState.errors.nome}
+            error={form.formState.errors.nome?.message}
+            disabled={isPending}
+            {...form.register("nome")}
+          />
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="valorAlvo">Valor da meta (R$)</Label>
-              <Input
-                id="valorAlvo"
-                type="number"
-                step="0.01"
-                min="0.01"
-                placeholder="0.00"
-                aria-invalid={!!form.formState.errors.valorAlvo}
-                disabled={isPending}
-                {...form.register("valorAlvo", { valueAsNumber: true })}
-              />
-              {form.formState.errors.valorAlvo && (
-                <p className="text-xs text-destructive">
-                  {form.formState.errors.valorAlvo.message}
-                </p>
-              )}
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="dataAlvo">
-                Prazo{" "}
-                <span className="text-xs font-normal text-muted-foreground">(opcional)</span>
-              </Label>
-              <Input id="dataAlvo" type="date" disabled={isPending} {...form.register("dataAlvo")} />
-            </div>
+            <FloatingInput
+              label="Valor da meta (R$)"
+              id="valorAlvo"
+              type="number"
+              step="0.01"
+              min="0.01"
+              aria-invalid={!!form.formState.errors.valorAlvo}
+              error={form.formState.errors.valorAlvo?.message}
+              disabled={isPending}
+              {...form.register("valorAlvo", { valueAsNumber: true })}
+            />
+            <FloatingInput
+              label="Prazo (opcional)"
+              id="dataAlvo"
+              type="date"
+              disabled={isPending}
+              {...form.register("dataAlvo")}
+            />
           </div>
 
           <div className="flex flex-col gap-1.5">

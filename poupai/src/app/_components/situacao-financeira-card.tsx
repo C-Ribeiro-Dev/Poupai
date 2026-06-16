@@ -9,16 +9,16 @@ const DIAGNOSTICO_CONFIG = {
   estavel: {
     emoji: "🟢",
     label: "Estável",
-    cor: "text-emerald-600",
-    bg: "bg-emerald-50 border-emerald-200",
+    cor: "text-emerald-600 dark:text-emerald-400",
+    bg: "bg-emerald-500/10 border-emerald-500/20",
     icon: CheckCircle2,
     resumo: "Sua situação financeira está sob controle.",
   },
   atencao: {
     emoji: "🟡",
     label: "Atenção",
-    cor: "text-amber-600",
-    bg: "bg-amber-50 border-amber-200",
+    cor: "text-amber-600 dark:text-amber-400",
+    bg: "bg-amber-500/10 border-amber-500/20",
     icon: AlertTriangle,
     resumo: "Sua situação financeira exige alguns cuidados.",
   },
@@ -90,7 +90,7 @@ export function SituacaoFinanceiraCard({ data }: { data: SituacaoFinanceiraData 
         </div>
       ) : topPositivo ? (
         <div className="rounded-lg bg-black/5 px-3 py-2 text-xs">
-          <p className="font-medium text-emerald-700">{topPositivo.titulo}</p>
+          <p className="font-medium text-emerald-600 dark:text-emerald-400">{topPositivo.titulo}</p>
           <p className="text-muted-foreground">{topPositivo.descricao}</p>
         </div>
       ) : null}

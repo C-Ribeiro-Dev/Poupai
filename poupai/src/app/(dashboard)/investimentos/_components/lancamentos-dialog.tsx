@@ -7,8 +7,8 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FloatingInput } from "@/components/ui/floating-input";
+import { FloatingCombobox } from "@/components/ui/floating-combobox";
 import {
   Dialog,
   DialogContent,
@@ -105,44 +105,31 @@ export function LancamentosDialog({ open, onOpenChange, ativo }: LancamentosDial
           className="flex flex-col gap-3 rounded-lg border border-border bg-muted/30 p-3.5"
         >
           <div className="grid grid-cols-3 gap-2">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="tipo" className="text-xs">
-                Tipo
-              </Label>
-              <select
-                id="tipo"
-                disabled={isPending}
-                className="flex h-9 w-full rounded-md border border-input bg-background px-2 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
-                {...form.register("tipo")}
-              >
-                {TIPOS_LANCAMENTO.map((t) => (
-                  <option key={t.key} value={t.key}>
-                    {t.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="valor" className="text-xs">
-                Valor (R$)
-              </Label>
-              <Input
-                id="valor"
-                type="number"
-                step="0.01"
-                min="0.01"
-                placeholder="0.00"
-                aria-invalid={!!form.formState.errors.valor}
-                disabled={isPending}
-                {...form.register("valor", { valueAsNumber: true })}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="data" className="text-xs">
-                Data
-              </Label>
-              <Input id="data" type="date" disabled={isPending} {...form.register("data")} />
-            </div>
+            <FloatingCombobox
+              label="Tipo"
+              options={TIPOS_LANCAMENTO.map((t) => ({ value: t.key, label: t.label }))}
+              value={form.watch("tipo") ?? "aporte"}
+              onChange={(v) => form.setValue("tipo", v as LancamentoFormData["tipo"], { shouldValidate: true })}
+              disabled={isPending}
+              error={form.formState.errors.tipo?.message}
+            />
+            <FloatingInput
+              label="Valor (R$)"
+              id="valor"
+              type="number"
+              step="0.01"
+              min="0.01"
+              aria-invalid={!!form.formState.errors.valor}
+              disabled={isPending}
+              {...form.register("valor", { valueAsNumber: true })}
+            />
+            <FloatingInput
+              label="Data"
+              id="data"
+              type="date"
+              disabled={isPending}
+              {...form.register("data")}
+            />
           </div>
           {form.formState.errors.valor && (
             <p className="text-xs text-destructive">{form.formState.errors.valor.message}</p>

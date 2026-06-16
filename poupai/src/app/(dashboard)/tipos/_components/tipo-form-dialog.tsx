@@ -6,7 +6,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { FloatingInput } from "@/components/ui/floating-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -72,19 +72,14 @@ export function TipoFormDialog({ open, onOpenChange, tipo }: TipoFormDialogProps
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
           {/* Nome */}
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="nome">Nome</Label>
-            <Input
-              id="nome"
-              placeholder="Ex: Salário, Aluguel, Alimentação"
-              aria-invalid={!!form.formState.errors.nome}
-              disabled={isPending}
-              {...form.register("nome")}
-            />
-            {form.formState.errors.nome && (
-              <p className="text-xs text-destructive">{form.formState.errors.nome.message}</p>
-            )}
-          </div>
+          <FloatingInput
+            label="Nome"
+            id="nome"
+            aria-invalid={!!form.formState.errors.nome}
+            error={form.formState.errors.nome?.message}
+            disabled={isPending}
+            {...form.register("nome")}
+          />
 
           {/* Tipo: Entrada / Saída */}
           <div className="flex flex-col gap-1.5">

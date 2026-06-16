@@ -6,8 +6,7 @@ import { Loader2, PiggyBank } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FloatingInput } from "@/components/ui/floating-input";
 import {
   Dialog,
   DialogContent,
@@ -80,33 +79,26 @@ export function AporteDialog({ open, onOpenChange, meta }: AporteDialogProps) {
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="valor">Valor (R$)</Label>
-              <Input
-                id="valor"
-                type="number"
-                step="0.01"
-                min="0.01"
-                placeholder="0.00"
-                autoFocus
-                aria-invalid={!!form.formState.errors.valor}
-                disabled={isPending}
-                {...form.register("valor", { valueAsNumber: true })}
-              />
-              {form.formState.errors.valor && (
-                <p className="text-xs text-destructive">{form.formState.errors.valor.message}</p>
-              )}
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="data">Data</Label>
-              <Input
-                id="data"
-                type="date"
-                aria-invalid={!!form.formState.errors.data}
-                disabled={isPending}
-                {...form.register("data")}
-              />
-            </div>
+            <FloatingInput
+              label="Valor (R$)"
+              id="valor"
+              type="number"
+              step="0.01"
+              min="0.01"
+              autoFocus
+              aria-invalid={!!form.formState.errors.valor}
+              error={form.formState.errors.valor?.message}
+              disabled={isPending}
+              {...form.register("valor", { valueAsNumber: true })}
+            />
+            <FloatingInput
+              label="Data"
+              id="data"
+              type="date"
+              aria-invalid={!!form.formState.errors.data}
+              disabled={isPending}
+              {...form.register("data")}
+            />
           </div>
 
           <DialogFooter>

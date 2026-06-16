@@ -6,7 +6,8 @@ import { Loader2, Check } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { FloatingInput } from "@/components/ui/floating-input";
+import { FloatingCombobox } from "@/components/ui/floating-combobox";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -80,69 +81,49 @@ export function ContaFormDialog({ open, onOpenChange, conta }: ContaFormDialogPr
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="nome">Nome</Label>
-            <Input
-              id="nome"
-              placeholder="Ex: Nubank, Carteira, Poupança CEF"
-              aria-invalid={!!form.formState.errors.nome}
-              disabled={isPending}
-              {...form.register("nome")}
-            />
-            {form.formState.errors.nome && (
-              <p className="text-xs text-destructive">{form.formState.errors.nome.message}</p>
-            )}
-          </div>
+          <FloatingInput
+            label="Nome"
+            id="nome"
+            placeholder="Ex: Nubank, Carteira, Poupança CEF"
+            aria-invalid={!!form.formState.errors.nome}
+            error={form.formState.errors.nome?.message}
+            disabled={isPending}
+            {...form.register("nome")}
+          />
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="tipo">Tipo</Label>
-              <select
-                id="tipo"
-                disabled={isPending}
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                {...form.register("tipo")}
-              >
-                {TIPOS_CONTA.map((t) => (
-                  <option key={t.key} value={t.key}>
-                    {t.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="instituicao">
-                Instituição{" "}
-                <span className="text-xs font-normal text-muted-foreground">(opcional)</span>
-              </Label>
-              <Input
-                id="instituicao"
-                placeholder="Ex: Nubank, Itaú"
-                disabled={isPending}
-                {...form.register("instituicao")}
-              />
-            </div>
+            <FloatingCombobox
+              label="Tipo"
+              options={TIPOS_CONTA.map((t) => ({ value: t.key, label: t.label }))}
+              value={form.watch("tipo") ?? "corrente"}
+              onChange={(v) => form.setValue("tipo", v as ContaFormData["tipo"], { shouldValidate: true })}
+              disabled={isPending}
+              error={form.formState.errors.tipo?.message}
+            />
+            <FloatingInput
+              label="Instituição (opcional)"
+              id="instituicao"
+              placeholder="Ex: Nubank, Itaú"
+              disabled={isPending}
+              {...form.register("instituicao")}
+            />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="saldoInicial">Saldo inicial (R$)</Label>
-            <Input
+            <FloatingInput
+              label="Saldo inicial (R$)"
               id="saldoInicial"
               type="number"
               step="0.01"
               placeholder="0.00"
               aria-invalid={!!form.formState.errors.saldoInicial}
+              error={form.formState.errors.saldoInicial?.message}
               disabled={isPending}
               {...form.register("saldoInicial", { valueAsNumber: true })}
             />
             <p className="text-xs text-muted-foreground">
               Quanto a conta tem hoje — as movimentações somam a partir deste valor.
             </p>
-            {form.formState.errors.saldoInicial && (
-              <p className="text-xs text-destructive">
-                {form.formState.errors.saldoInicial.message}
-              </p>
-            )}
           </div>
 
           <div className="flex flex-col gap-1.5">

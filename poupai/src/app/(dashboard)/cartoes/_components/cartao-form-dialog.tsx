@@ -6,7 +6,7 @@ import { Loader2, Check } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { FloatingInput } from "@/components/ui/floating-input";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -82,87 +82,62 @@ export function CartaoFormDialog({ open, onOpenChange, cartao }: CartaoFormDialo
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="nome">Nome</Label>
-              <Input
-                id="nome"
-                placeholder="Ex: Nubank, Inter"
-                aria-invalid={!!form.formState.errors.nome}
-                disabled={isPending}
-                {...form.register("nome")}
-              />
-              {form.formState.errors.nome && (
-                <p className="text-xs text-destructive">{form.formState.errors.nome.message}</p>
-              )}
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="bandeira">
-                Bandeira{" "}
-                <span className="text-xs font-normal text-muted-foreground">(opcional)</span>
-              </Label>
-              <Input
-                id="bandeira"
-                placeholder="Ex: Mastercard"
-                disabled={isPending}
-                {...form.register("bandeira")}
-              />
-            </div>
+            <FloatingInput
+              label="Nome"
+              id="nome"
+              placeholder="Ex: Nubank, Inter"
+              aria-invalid={!!form.formState.errors.nome}
+              error={form.formState.errors.nome?.message}
+              disabled={isPending}
+              {...form.register("nome")}
+            />
+            <FloatingInput
+              label="Bandeira (opcional)"
+              id="bandeira"
+              placeholder="Ex: Mastercard"
+              disabled={isPending}
+              {...form.register("bandeira")}
+            />
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="limite">Limite (R$)</Label>
-            <Input
-              id="limite"
-              type="number"
-              step="0.01"
-              min="0.01"
-              placeholder="0.00"
-              aria-invalid={!!form.formState.errors.limite}
-              disabled={isPending}
-              {...form.register("limite", { valueAsNumber: true })}
-            />
-            {form.formState.errors.limite && (
-              <p className="text-xs text-destructive">{form.formState.errors.limite.message}</p>
-            )}
-          </div>
+          <FloatingInput
+            label="Limite (R$)"
+            id="limite"
+            type="number"
+            step="0.01"
+            min="0.01"
+            placeholder="0.00"
+            aria-invalid={!!form.formState.errors.limite}
+            error={form.formState.errors.limite?.message}
+            disabled={isPending}
+            {...form.register("limite", { valueAsNumber: true })}
+          />
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="diaFechamento">Dia do fechamento</Label>
-              <Input
-                id="diaFechamento"
-                type="number"
-                min="1"
-                max="31"
-                placeholder="Ex: 10"
-                aria-invalid={!!form.formState.errors.diaFechamento}
-                disabled={isPending}
-                {...intRegister("diaFechamento")}
-              />
-              {form.formState.errors.diaFechamento && (
-                <p className="text-xs text-destructive">
-                  {form.formState.errors.diaFechamento.message}
-                </p>
-              )}
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="diaVencimento">Dia do vencimento</Label>
-              <Input
-                id="diaVencimento"
-                type="number"
-                min="1"
-                max="31"
-                placeholder="Ex: 17"
-                aria-invalid={!!form.formState.errors.diaVencimento}
-                disabled={isPending}
-                {...intRegister("diaVencimento")}
-              />
-              {form.formState.errors.diaVencimento && (
-                <p className="text-xs text-destructive">
-                  {form.formState.errors.diaVencimento.message}
-                </p>
-              )}
-            </div>
+            <FloatingInput
+              label="Dia do fechamento"
+              id="diaFechamento"
+              type="number"
+              min="1"
+              max="31"
+              placeholder="Ex: 10"
+              aria-invalid={!!form.formState.errors.diaFechamento}
+              error={form.formState.errors.diaFechamento?.message}
+              disabled={isPending}
+              {...intRegister("diaFechamento")}
+            />
+            <FloatingInput
+              label="Dia do vencimento"
+              id="diaVencimento"
+              type="number"
+              min="1"
+              max="31"
+              placeholder="Ex: 17"
+              aria-invalid={!!form.formState.errors.diaVencimento}
+              error={form.formState.errors.diaVencimento?.message}
+              disabled={isPending}
+              {...intRegister("diaVencimento")}
+            />
           </div>
 
           <div className="flex flex-col gap-1.5">

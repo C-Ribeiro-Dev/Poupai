@@ -3,6 +3,7 @@ import { useState, useTransition } from "react";
 import { ArrowRightLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { FloatingCombobox } from "@/components/ui/floating-combobox";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { migrarMovimentacoesParaCartaoAction } from "@/actions/cartoes";
 import type { CartaoRow } from "@/types/cartoes";
 
@@ -52,21 +52,13 @@ export function MigrarCartaoDialog({ open, onOpenChange, cartoes }: MigrarCartao
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="cartao-migrar">Cartão de destino</Label>
-          <select
-            id="cartao-migrar"
-            value={cartaoId || ""}
-            onChange={(e) => setCartaoId(Number(e.target.value) || 0)}
-            disabled={isPending}
-            className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-          >
-            <option value="">Selecione...</option>
-            {cartoes.map((c) => (
-              <option key={c.id} value={c.id}>{c.nome}</option>
-            ))}
-          </select>
-        </div>
+        <FloatingCombobox
+          label="Cartão de destino"
+          options={cartoes.map((c) => ({ value: String(c.id), label: c.nome }))}
+          value={cartaoId ? String(cartaoId) : ""}
+          onChange={(v) => setCartaoId(v ? Number(v) : 0)}
+          disabled={isPending}
+        />
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>

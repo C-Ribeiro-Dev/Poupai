@@ -6,7 +6,7 @@ import { Loader2, Check } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { FloatingInput } from "@/components/ui/floating-input";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -103,18 +103,16 @@ export function CategoriaFormDialog({ open, onOpenChange, categoria }: Categoria
               <PreviewIcon className="size-6" style={{ color: selectedCor }} />
             </div>
             <div className="flex-1">
-              <Label htmlFor="nome">Nome</Label>
-              <Input
+              <FloatingInput
+                label="Nome"
                 id="nome"
                 placeholder="Ex: Alimentação, Salário"
                 className="mt-1"
                 aria-invalid={!!form.formState.errors.nome}
+                error={form.formState.errors.nome?.message}
                 disabled={isPending}
                 {...form.register("nome")}
               />
-              {form.formState.errors.nome && (
-                <p className="mt-0.5 text-xs text-destructive">{form.formState.errors.nome.message}</p>
-              )}
             </div>
           </div>
 

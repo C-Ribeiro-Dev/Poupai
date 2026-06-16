@@ -18,7 +18,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { FloatingInput } from "@/components/ui/floating-input";
+import { FloatingCombobox } from "@/components/ui/floating-combobox";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MovimentacaoFormDialog } from "./movimentacao-form-dialog";
 import { DeleteMovimentacaoDialog } from "./delete-movimentacao-dialog";
@@ -350,7 +351,8 @@ export function MovimentacoesClient({
           {/* Search */}
           <div className="relative min-w-[180px] flex-1 sm:max-w-xs">
             <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input
+            <FloatingInput
+              label=""
               placeholder="Buscar tipo, categoria..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -385,47 +387,29 @@ export function MovimentacoesClient({
 
           {/* Tipo filter */}
           {tipos.length > 0 && (
-            <select
-              value={tipoIdFilter}
-              onChange={(e) => setTipoIdFilter(e.target.value)}
-              aria-label="Filtrar por tipo"
-              className={cn(
-                "h-8 rounded-lg border border-input bg-transparent px-2.5 text-xs",
-                "text-muted-foreground outline-none transition-colors",
-                "focus:border-ring focus:text-foreground dark:bg-input/30",
-                tipoIdFilter && "text-foreground"
-              )}
-            >
-              <option value="">Todos os tipos</option>
-              {tipos.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.nome}
-                </option>
-              ))}
-            </select>
+            <div className="w-40">
+              <FloatingCombobox
+                label="Todos os tipos"
+                options={tipos.map((t) => ({ value: String(t.id), label: t.nome }))}
+                value={tipoIdFilter}
+                onChange={(v) => setTipoIdFilter(v)}
+              />
+            </div>
           )}
 
           {/* Categoria filter */}
           {categoriaOptions.length > 0 && (
-            <select
-              value={categoriaFilter}
-              onChange={(e) => setCategoriaFilter(e.target.value)}
-              aria-label="Filtrar por categoria"
-              className={cn(
-                "h-8 rounded-lg border border-input bg-transparent px-2.5 text-xs",
-                "text-muted-foreground outline-none transition-colors",
-                "focus:border-ring focus:text-foreground dark:bg-input/30",
-                categoriaFilter && "text-foreground"
-              )}
-            >
-              <option value="">Todas as categorias</option>
-              <option value="__sem__">Sem categoria</option>
-              {categoriaOptions.map((nome) => (
-                <option key={nome} value={nome}>
-                  {nome}
-                </option>
-              ))}
-            </select>
+            <div className="w-44">
+              <FloatingCombobox
+                label="Todas as categorias"
+                options={[
+                  { value: "__sem__", label: "Sem categoria" },
+                  ...categoriaOptions.map((nome) => ({ value: nome, label: nome })),
+                ]}
+                value={categoriaFilter}
+                onChange={(v) => setCategoriaFilter(v)}
+              />
+            </div>
           )}
         </div>
 

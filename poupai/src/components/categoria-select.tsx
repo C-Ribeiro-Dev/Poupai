@@ -29,7 +29,7 @@ export const CategoriaSelect = forwardRef<HTMLSelectElement, CategoriaSelectProp
     return (
       <select
         ref={ref}
-        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+        className="h-10 w-full rounded-xl border border-border/60 bg-foreground/[0.03] px-3.5 py-2 text-sm transition-all duration-200 outline-none hover:border-ring/50 hover:bg-foreground/[0.05] focus-visible:border-ring focus-visible:bg-background focus-visible:ring-4 focus-visible:ring-ring/15 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:bg-white/[0.06] dark:hover:border-white/20 dark:hover:bg-white/[0.08] dark:focus-visible:border-ring dark:focus-visible:bg-white/[0.07]"
         {...props}
       >
         <option value="">Sem categoria</option>
