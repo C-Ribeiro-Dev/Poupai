@@ -96,10 +96,13 @@ export async function getProximosCompromissos(userId: string): Promise<ProximosC
   }
 
   // ── Faturas de cartão ────────────────────────────────────────────────────
+  const hoje = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   for (const cartao of cartoes.filter((c) => c.ativo)) {
     for (const fatura of cartao.faturas) {
       if (fatura.status === "paga") continue;
       if (fatura.status === "futura") continue; // só aberta, fechada, parcial
+      // Ignorar faturas cujo vencimento já passou (não são mais compromisso pendente)
+      if (fatura.vencimento < hoje) continue;
       const saldo = Math.max(0, fatura.total - fatura.totalPago);
       if (saldo < 0.01) continue;
 
