@@ -43,6 +43,9 @@ export async function createMovimentacaoAction(
   });
 
   revalidatePath("/movimentacoes");
+  revalidatePath("/compromissos");
+  revalidatePath("/saldo-projetado");
+  revalidatePath("/");
   return { success: true };
 }
 
@@ -88,6 +91,9 @@ export async function updateMovimentacaoAction(
   });
 
   revalidatePath("/movimentacoes");
+  revalidatePath("/compromissos");
+  revalidatePath("/saldo-projetado");
+  revalidatePath("/");
   return { success: true };
 }
 
@@ -120,6 +126,9 @@ export async function deleteMovimentacaoAction(
 
   revalidatePath("/movimentacoes");
   revalidatePath("/movimentacoes-fixas");
+  revalidatePath("/compromissos");
+  revalidatePath("/saldo-projetado");
+  revalidatePath("/");
   return { success: true };
 }
 
@@ -151,6 +160,9 @@ export async function batchDeleteMovimentacaoAction(
 
   revalidatePath("/movimentacoes");
   revalidatePath("/movimentacoes-fixas");
+  revalidatePath("/compromissos");
+  revalidatePath("/saldo-projetado");
+  revalidatePath("/");
   return { success: true };
 }
 

@@ -29,6 +29,9 @@ export async function createDividaAction(data: DividaFormData): Promise<DividaRe
   });
 
   revalidatePath("/dividas");
+  revalidatePath("/compromissos");
+  revalidatePath("/saldo-projetado");
+  revalidatePath("/");
   return { success: true };
 }
 
@@ -64,6 +67,9 @@ export async function updateDividaAction(
   });
 
   revalidatePath("/dividas");
+  revalidatePath("/compromissos");
+  revalidatePath("/saldo-projetado");
+  revalidatePath("/");
   return { success: true };
 }
 
@@ -82,6 +88,8 @@ export async function pagarParcelaAction(id: number): Promise<DividaResult> {
   });
 
   revalidatePath("/dividas");
+  revalidatePath("/compromissos");
+  revalidatePath("/saldo-projetado");
   revalidatePath("/");
   return { success: true };
 }
@@ -93,6 +101,9 @@ export async function deleteDividaAction(id: number): Promise<DividaResult> {
 
   await prisma.divida.update({ where: { id }, data: { isDeleted: true } });
   revalidatePath("/dividas");
+  revalidatePath("/compromissos");
+  revalidatePath("/saldo-projetado");
+  revalidatePath("/");
   return { success: true };
 }
 
@@ -104,5 +115,8 @@ export async function batchDeleteDividaAction(ids: number[]): Promise<DividaResu
     data: { isDeleted: true },
   });
   revalidatePath("/dividas");
+  revalidatePath("/compromissos");
+  revalidatePath("/saldo-projetado");
+  revalidatePath("/");
   return { success: true };
 }

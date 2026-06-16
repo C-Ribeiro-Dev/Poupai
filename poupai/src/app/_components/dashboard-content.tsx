@@ -22,6 +22,18 @@ import { parsePeriodo } from "@/services/analytics";
 import type { DashboardData, DashboardProximoVencimento } from "@/types/dashboard";
 import { AnalyticsSection } from "./analytics-section";
 import { InteligenciaSection } from "./inteligencia-section";
+import { DinheiroDisponivelCard } from "./dinheiro-disponivel-card";
+import { getDinheiroDisponivel } from "@/services/dinheiro-disponivel";
+import { ProximosCompromissosCard } from "./proximos-compromissos-card";
+import { getProximosCompromissos } from "@/services/compromissos";
+import { SaldoProjetadoCard } from "./saldo-projetado-card";
+import { getSaldoProjetado } from "@/services/saldo-projetado";
+import { SituacaoFinanceiraCard } from "./situacao-financeira-card";
+import { getSituacaoFinanceira } from "@/services/situacao-financeira";
+import { PlanoAcaoCard } from "./plano-acao-card";
+import { getPlanoAcao } from "@/services/plano-acao";
+import { GastosInteligentesCard } from "./gastos-inteligentes-card";
+import { getGastosInteligentes } from "@/services/gastos-inteligentes";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -351,9 +363,15 @@ export async function DashboardContent({
     mesRef.getFullYear() === now.getFullYear() && mesRef.getMonth() === now.getMonth();
   const periodo = parsePeriodo(periodoParam);
 
-  const [user, data] = await Promise.all([
+  const [user, data, dinheiroDisponivel, compromissos, saldoProjetado, situacao, plano, gastos] = await Promise.all([
     getCurrentUser(),
     getDashboardData(userId, mesRef),
+    getDinheiroDisponivel(userId),
+    getProximosCompromissos(userId),
+    getSaldoProjetado(userId),
+    getSituacaoFinanceira(userId),
+    getPlanoAcao(userId),
+    getGastosInteligentes(userId),
   ]);
   const name = user?.user_metadata?.nome as string | undefined;
 
@@ -445,6 +463,15 @@ export async function DashboardContent({
           valueColor="text-emerald-600 dark:text-emerald-400"
           sublabel="neste ciclo"
         />
+      </div>
+
+      {/* ── Análise + Plano + Gastos ── */}
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <DinheiroDisponivelCard data={dinheiroDisponivel} />
+        <SaldoProjetadoCard data={saldoProjetado} />
+        <SituacaoFinanceiraCard data={situacao} />
+        <PlanoAcaoCard data={plano} />
+        <GastosInteligentesCard data={gastos} />
       </div>
 
       {/* ── Insights do mês ── */}
@@ -624,6 +651,9 @@ export async function DashboardContent({
           </div>
         </div>
       )}
+
+      {/* ── Próximos Compromissos ── */}
+      <ProximosCompromissosCard data={compromissos} />
 
       {/* ── Inteligência financeira ── */}
       <InteligenciaSection userId={userId} />

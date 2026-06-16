@@ -53,6 +53,9 @@ export async function createMovimentacaoFixaAction(
   });
 
   revalidatePath("/movimentacoes-fixas");
+  revalidatePath("/compromissos");
+  revalidatePath("/saldo-projetado");
+  revalidatePath("/");
   return { success: true };
 }
 
@@ -98,6 +101,9 @@ export async function updateMovimentacaoFixaAction(
   });
 
   revalidatePath("/movimentacoes-fixas");
+  revalidatePath("/compromissos");
+  revalidatePath("/saldo-projetado");
+  revalidatePath("/");
   return { success: true };
 }
 
@@ -116,6 +122,9 @@ export async function deleteMovimentacaoFixaAction(id: number): Promise<FixaActi
   });
 
   revalidatePath("/movimentacoes-fixas");
+  revalidatePath("/compromissos");
+  revalidatePath("/saldo-projetado");
+  revalidatePath("/");
   return { success: true };
 }
 
@@ -131,6 +140,9 @@ export async function marcarComoPagoAction(id: number): Promise<FixaActionResult
 
   revalidatePath("/movimentacoes-fixas");
   revalidatePath("/movimentacoes");
+  revalidatePath("/compromissos");
+  revalidatePath("/saldo-projetado");
+  revalidatePath("/");
   return { success: true };
 }
 
@@ -146,5 +158,8 @@ export async function desmarcarPagamentoAction(id: number): Promise<FixaActionRe
 
   revalidatePath("/movimentacoes-fixas");
   revalidatePath("/movimentacoes");
+  revalidatePath("/compromissos");
+  revalidatePath("/saldo-projetado");
+  revalidatePath("/");
   return { success: true };
 }

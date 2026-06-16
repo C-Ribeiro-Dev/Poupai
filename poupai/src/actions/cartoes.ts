@@ -130,7 +130,6 @@ export async function deleteCompraCartaoAction(id: number): Promise<CartaoAction
   return { success: true };
 }
 
-// Paga a fatura: registra o pagamento e cria a Movimentacao de saída correspondente
 export async function pagarFaturaAction(
   cartaoId: number,
   mesRef: string,
@@ -185,6 +184,8 @@ export async function pagarFaturaAction(
 
   revalidatePath("/cartoes");
   revalidatePath("/movimentacoes");
+  revalidatePath("/compromissos");
+  revalidatePath("/saldo-projetado");
   revalidatePath("/");
   return { success: true };
 }
@@ -204,7 +205,6 @@ export async function migrarMovimentacoesParaCartaoAction(
   });
   if (!cartao) return { success: false, error: "Cartão não encontrado." };
 
-  // Movimentações importadas do CSV de fatura do Nubank
   const movs = await prisma.movimentacao.findMany({
     where: {
       userId,
@@ -218,7 +218,6 @@ export async function migrarMovimentacoesParaCartaoAction(
     return { success: false, error: "Nenhuma movimentação de cartão Nubank encontrada para migrar." };
   }
 
-  // Dedup: ignora as que já viraram CompraCartao
   const idsExternos = movs.map((m) => m.idExterno!);
   const jaExistem = await prisma.compraCartao.findMany({
     where: { userId, idExterno: { in: idsExternos }, isDeleted: false },
@@ -245,7 +244,6 @@ export async function migrarMovimentacoesParaCartaoAction(
       });
     }
 
-    // Soft-delete todas (inclusive as ignoradas — já estão no cartão)
     await tx.movimentacao.updateMany({
       where: {
         userId,
@@ -258,6 +256,8 @@ export async function migrarMovimentacoesParaCartaoAction(
 
   revalidatePath("/cartoes");
   revalidatePath("/movimentacoes");
+  revalidatePath("/compromissos");
+  revalidatePath("/saldo-projetado");
   revalidatePath("/");
   return { success: true, migradas: novas.length, ignoradas };
 }
@@ -293,6 +293,8 @@ export async function desfazerPagamentoFaturaAction(
 
   revalidatePath("/cartoes");
   revalidatePath("/movimentacoes");
+  revalidatePath("/compromissos");
+  revalidatePath("/saldo-projetado");
   revalidatePath("/");
   return { success: true };
 }

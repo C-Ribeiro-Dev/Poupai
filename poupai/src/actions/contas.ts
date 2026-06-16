@@ -32,6 +32,9 @@ export async function createContaAction(data: ContaFormData): Promise<ContaActio
   });
 
   revalidatePath("/contas");
+  revalidatePath("/compromissos");
+  revalidatePath("/saldo-projetado");
+  revalidatePath("/");
   return { success: true };
 }
 
@@ -63,6 +66,9 @@ export async function updateContaAction(
   });
 
   revalidatePath("/contas");
+  revalidatePath("/compromissos");
+  revalidatePath("/saldo-projetado");
+  revalidatePath("/");
   return { success: true };
 }
 
@@ -78,6 +84,9 @@ export async function deleteContaAction(id: number): Promise<ContaActionResult> 
   await prisma.conta.update({ where: { id }, data: { isDeleted: true } });
 
   revalidatePath("/contas");
+  revalidatePath("/compromissos");
+  revalidatePath("/saldo-projetado");
+  revalidatePath("/");
   return { success: true };
 }
 
@@ -113,5 +122,8 @@ export async function transferirAction(
   });
 
   revalidatePath("/contas");
+  revalidatePath("/compromissos");
+  revalidatePath("/saldo-projetado");
+  revalidatePath("/");
   return { success: true };
 }
