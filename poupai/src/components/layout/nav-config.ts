@@ -19,6 +19,7 @@ import {
   Tag,
   Receipt,
   Calculator,
+  Settings,
   type LucideIcon,
 } from "lucide-react";
 
@@ -49,4 +50,5 @@ export const navItems: NavConfigItem[] = [
   { href: "/conquistas", icon: Trophy, label: "Conquistas" },
   { href: "/categorias", icon: Shapes, label: "Categorias" },
   { href: "/tipos", icon: Tag, label: "Tipos" },
+  { href: "/configuracoes", icon: Settings, label: "Configurações" },
 ];

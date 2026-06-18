@@ -4,7 +4,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, todayStr, toDateInputValue } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { FloatingInput } from "@/components/ui/floating-input";
 import { FloatingCombobox } from "@/components/ui/floating-combobox";
@@ -27,15 +27,6 @@ import type { CategoriaRow } from "@/types/categorias";
 import type { ContaRow } from "@/types/contas";
 import { createMovimentacaoAction, updateMovimentacaoAction } from "@/actions/movimentacoes";
 
-const todayStr = (): string => {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-};
-
-const toDateInputValue = (date: Date): string => {
-  const d = new Date(date);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-};
 
 interface MovimentacaoFormDialogProps {
   open: boolean;
@@ -75,7 +66,7 @@ export function MovimentacaoFormDialog({
     if (open) {
       form.reset({
         tipoId: movimentacao?.tipoId ?? 0,
-        valor: movimentacao?.valor ?? (undefined as unknown as number),
+        valor: movimentacao?.valor ?? NaN,
         data: movimentacao ? toDateInputValue(movimentacao.data) : todayStr(),
         categoria: movimentacao?.categoria ?? "",
         descricao: movimentacao?.descricao ?? "",

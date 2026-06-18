@@ -1,9 +1,11 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   Plus,
   Upload,
+  Download,
   Search,
   ArrowUpDown,
   ArrowUp,
@@ -17,6 +19,7 @@ import {
   Scale,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { FloatingInput } from "@/components/ui/floating-input";
 import { FloatingCombobox } from "@/components/ui/floating-combobox";
@@ -31,7 +34,7 @@ import type { CategoriaRow } from "@/types/categorias";
 import type { ContaRow } from "@/types/contas";
 
 type SortField = "data" | "valor";
-type PeriodPreset = "all" | "week" | "month" | "year" | "custom";
+type PeriodPreset = "all" | "today" | "week" | "month" | "year" | "custom";
 type DirectionFilter = "all" | "entrada" | "saida";
 
 interface SortConfig {
@@ -41,14 +44,12 @@ interface SortConfig {
 
 const PERIOD_LABELS: Record<PeriodPreset, string> = {
   all: "Tudo",
+  today: "Hoje",
   week: "Semana",
   month: "Mês",
   year: "Ano",
   custom: "Personalizado",
 };
-
-const formatCurrency = (value: number): string =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 
 const formatDate = (date: Date): string =>
   new Intl.DateTimeFormat("pt-BR", {
@@ -63,6 +64,13 @@ function getPeriodRange(
 ): { start: Date | null; end: Date | null } {
   const now = new Date();
   switch (preset) {
+    case "today": {
+      const start = new Date(now);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(now);
+      end.setHours(23, 59, 59, 999);
+      return { start, end };
+    }
     case "week": {
       const start = new Date(now);
       start.setDate(now.getDate() - 6);
@@ -162,36 +170,88 @@ function SortButton({
 
 interface MovimentacoesClientProps {
   movimentacoes: MovimentacaoRow[];
+  total: number;
+  page: number;
+  totalPages: number;
   tipos: TipoMovimentacaoRow[];
   categorias: CategoriaRow[];
   contas: ContaRow[];
-  initialSearch?: string;
   isAdmin?: boolean;
 }
 
 export function MovimentacoesClient({
   movimentacoes,
+  total,
+  page,
+  totalPages,
   tipos,
   categorias,
   contas,
-  initialSearch,
   isAdmin,
 }: MovimentacoesClientProps) {
-  // Com busca vinda da URL (busca global), inicia em "Tudo" para não esconder resultados antigos
-  const [period, setPeriod] = useState<PeriodPreset>(initialSearch ? "all" : "month");
-  const [customDates, setCustomDates] = useState({ start: "", end: "" });
-  const [search, setSearch] = useState(initialSearch ?? "");
-  const [direction, setDirection] = useState<DirectionFilter>("all");
-  const [tipoIdFilter, setTipoIdFilter] = useState("");
-  const [categoriaFilter, setCategoriaFilter] = useState("");
-  const [sort, setSort] = useState<SortConfig>({ field: "data", order: "desc" });
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
+  // Filtros derivados da URL
+  const urlQ = searchParams.get("q") ?? "";
+  const period = (searchParams.get("period") as PeriodPreset) || (urlQ ? "all" : "month");
+  const customDates = {
+    start: searchParams.get("start") ?? "",
+    end: searchParams.get("end") ?? "",
+  };
+  const direction = (searchParams.get("dir") as DirectionFilter) || "all";
+  const tipoIdFilter = searchParams.get("tipo") ?? "";
+  const categoriaFilter = searchParams.get("cat") ?? "";
+  const sort: SortConfig = {
+    field: (searchParams.get("sort") as SortField) || "data",
+    order: (searchParams.get("order") as "asc" | "desc") || "desc",
+  };
+
+  // Busca tem estado local para o input (responsivo) + debounce para URL
+  const [search, setSearch] = useState(urlQ);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Sincroniza input de busca quando URL muda externamente (ex: botão voltar)
+  useEffect(() => {
+    setSearch(searchParams.get("q") ?? "");
+  }, [searchParams]);
+
+  // Estado apenas de UI (sem URL)
   const [createOpen, setCreateOpen] = useState(false);
   const [editItem, setEditItem] = useState<MovimentacaoRow | null>(null);
   const [deleteItem, setDeleteItem] = useState<MovimentacaoRow | null>(null);
   const [detailItem, setDetailItem] = useState<MovimentacaoRow | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
+
+  function updateParams(updates: Record<string, string | null>) {
+    const params = new URLSearchParams(searchParams.toString());
+    for (const [key, value] of Object.entries(updates)) {
+      if (value === null || value === "") params.delete(key);
+      else params.set(key, value);
+    }
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }
+
+  function handleSearchChange(value: string) {
+    setSearch(value);
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => {
+      updateParams({ q: value || null, page: null });
+    }, 300);
+  }
+
+  function handlePeriodChange(p: PeriodPreset) {
+    const update: Record<string, string | null> = { period: p === "month" ? null : p, page: null };
+    if (p !== "custom") { update.start = null; update.end = null; }
+    updateParams(update);
+  }
+
+  function handleCustomDateChange(field: "start" | "end", value: string) {
+    updateParams({ [field]: value || null, page: null });
+  }
 
   // Categorias disponíveis para o filtro: cadastradas + legadas presentes nos dados
   const categoriaOptions = useMemo(() => {
@@ -202,41 +262,8 @@ export function MovimentacoesClient({
     return [...nomes].sort((a, b) => a.localeCompare(b, "pt-BR"));
   }, [categorias, movimentacoes]);
 
-  const filtered = useMemo(() => {
-    const { start, end } = getPeriodRange(period, customDates);
-    const term = search.toLowerCase().trim();
-    const tipoId = tipoIdFilter ? Number(tipoIdFilter) : null;
-
-    const list = movimentacoes.filter((m) => {
-      const date = new Date(m.data);
-      if (start && date < start) return false;
-      if (end && date > end) return false;
-      if (direction === "entrada" && !m.isEntrada) return false;
-      if (direction === "saida" && m.isEntrada) return false;
-      if (tipoId !== null && m.tipoId !== tipoId) return false;
-      if (categoriaFilter === "__sem__") {
-        if (m.categoria) return false;
-      } else if (categoriaFilter && m.categoria !== categoriaFilter) {
-        return false;
-      }
-      if (term) {
-        const haystack = [m.tipoNome, m.categoria, m.descricao]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-        if (!haystack.includes(term)) return false;
-      }
-      return true;
-    });
-
-    return [...list].sort((a, b) => {
-      const diff =
-        sort.field === "data"
-          ? new Date(a.data).getTime() - new Date(b.data).getTime()
-          : a.valor - b.valor;
-      return sort.order === "asc" ? diff : -diff;
-    });
-  }, [movimentacoes, period, customDates, search, direction, tipoIdFilter, categoriaFilter, sort]);
+  // Data is pre-filtered and paginated server-side
+  const filtered = movimentacoes;
 
   const summary = useMemo(() => {
     const entradas = filtered
@@ -252,10 +279,12 @@ export function MovimentacoesClient({
     search || direction !== "all" || tipoIdFilter || categoriaFilter || period !== "all";
 
   function toggleSort(field: SortField) {
-    setSort((prev) => ({
-      field,
-      order: prev.field === field && prev.order === "asc" ? "desc" : "asc",
-    }));
+    const newOrder = sort.field === field && sort.order === "asc" ? "desc" : "asc";
+    updateParams({
+      sort: field === "data" ? null : field,
+      order: newOrder === "desc" ? null : newOrder,
+      page: null,
+    });
   }
 
   const allFilteredSelected =
@@ -287,6 +316,28 @@ export function MovimentacoesClient({
     });
   }
 
+  function exportToCsv() {
+    const headers = ["Data", "Tipo", "Direção", "Categoria", "Descrição", "Valor"];
+    const rows = filtered.map((m) => [
+      formatDate(m.data),
+      m.tipoNome,
+      m.isEntrada ? "Entrada" : "Saída",
+      m.categoria ?? "",
+      m.descricao ?? "",
+      m.isEntrada ? m.valor : -m.valor,
+    ]);
+    const content = [headers, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const blob = new Blob(["﻿" + content], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `movimentacoes-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="flex flex-col gap-4 p-4 sm:p-6">
       {/* Header */}
@@ -299,11 +350,11 @@ export function MovimentacoesClient({
 
       {/* Period filter tabs */}
       <div className="flex items-center gap-1 overflow-x-auto pb-0.5">
-        {(["all", "week", "month", "year", "custom"] as PeriodPreset[]).map((p) => (
+        {(["all", "today", "week", "month", "year", "custom"] as PeriodPreset[]).map((p) => (
           <button
             key={p}
             type="button"
-            onClick={() => setPeriod(p)}
+            onClick={() => handlePeriodChange(p)}
             className={cn(
               "shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
@@ -320,18 +371,14 @@ export function MovimentacoesClient({
             <input
               type="date"
               value={customDates.start}
-              onChange={(e) =>
-                setCustomDates((d) => ({ ...d, start: e.target.value }))
-              }
+              onChange={(e) => handleCustomDateChange("start", e.target.value)}
               className="h-7 rounded-md border border-input bg-transparent px-2 text-xs outline-none focus:border-ring dark:bg-input/30"
             />
             <span className="text-xs text-muted-foreground">—</span>
             <input
               type="date"
               value={customDates.end}
-              onChange={(e) =>
-                setCustomDates((d) => ({ ...d, end: e.target.value }))
-              }
+              onChange={(e) => handleCustomDateChange("end", e.target.value)}
               className="h-7 rounded-md border border-input bg-transparent px-2 text-xs outline-none focus:border-ring dark:bg-input/30"
             />
           </div>
@@ -355,7 +402,7 @@ export function MovimentacoesClient({
               label=""
               placeholder="Buscar tipo, categoria..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="pl-8"
             />
           </div>
@@ -366,7 +413,7 @@ export function MovimentacoesClient({
               <button
                 key={d}
                 type="button"
-                onClick={() => setDirection(d)}
+                onClick={() => updateParams({ dir: d === "all" ? null : d, page: null })}
                 className={cn(
                   "px-3 py-1.5 text-xs font-medium transition-colors",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
@@ -392,7 +439,7 @@ export function MovimentacoesClient({
                 label="Todos os tipos"
                 options={tipos.map((t) => ({ value: String(t.id), label: t.nome }))}
                 value={tipoIdFilter}
-                onChange={(v) => setTipoIdFilter(v)}
+                onChange={(v) => updateParams({ tipo: v || null, page: null })}
               />
             </div>
           )}
@@ -407,13 +454,23 @@ export function MovimentacoesClient({
                   ...categoriaOptions.map((nome) => ({ value: nome, label: nome })),
                 ]}
                 value={categoriaFilter}
-                onChange={(v) => setCategoriaFilter(v)}
+                onChange={(v) => updateParams({ cat: v || null, page: null })}
               />
             </div>
           )}
         </div>
 
         <div className="flex shrink-0 gap-2">
+          {filtered.length > 0 && (
+            <button
+              type="button"
+              onClick={exportToCsv}
+              className="inline-flex h-7 items-center gap-1 rounded-lg border border-border bg-background px-2.5 text-[0.8rem] font-medium transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:border-input dark:bg-input/30 dark:hover:bg-input/50"
+            >
+              <Download className="size-3.5" />
+              <span className="hidden sm:inline">Exportar</span>
+            </button>
+          )}
           <Link
             href="/movimentacoes/importar"
             className="inline-flex h-7 items-center gap-1 rounded-lg border border-border bg-background px-2.5 text-[0.8rem] font-medium transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:border-input dark:bg-input/30 dark:hover:bg-input/50"
@@ -609,33 +666,63 @@ export function MovimentacoesClient({
           </table>
         </div>
 
-        {/* Footer counter */}
-        {filtered.length > 0 && (
-          <div className="border-t bg-muted/20 px-4 py-2.5">
+        {/* Footer — counter + pagination */}
+        <div className="border-t bg-muted/20 px-4 py-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-xs text-muted-foreground">
-              {filtered.length}{" "}
-              {filtered.length === 1
-                ? "movimentação encontrada"
-                : "movimentações encontradas"}
-              {hasActiveFilters && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSearch("");
-                    setDirection("all");
-                    setTipoIdFilter("");
-                    setCategoriaFilter("");
-                    setPeriod("month");
-                    setCustomDates({ start: "", end: "" });
-                  }}
-                  className="ml-2 text-foreground underline-offset-2 hover:underline"
-                >
-                  Limpar filtros
-                </button>
+              {total === 0 ? (
+                "Nenhuma movimentação encontrada"
+              ) : (
+                <>
+                  {totalPages > 1
+                    ? `Página ${page} de ${totalPages} · `
+                    : ""}
+                  {total}{" "}
+                  {total === 1 ? "movimentação" : "movimentações"}
+                  {hasActiveFilters && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearch("");
+                        if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+                        updateParams({ q: null, period: null, start: null, end: null, dir: null, tipo: null, cat: null, sort: null, order: null, page: null });
+                      }}
+                      className="ml-2 text-foreground underline-offset-2 hover:underline"
+                    >
+                      Limpar filtros
+                    </button>
+                  )}
+                </>
               )}
             </p>
+
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => updateParams({ page: String(page - 1) })}
+                  disabled={page <= 1}
+                  className="h-7 px-2 text-xs"
+                >
+                  Anterior
+                </Button>
+                <span className="px-2 text-xs tabular-nums text-muted-foreground">
+                  {page} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => updateParams({ page: String(page + 1) })}
+                  disabled={page >= totalPages}
+                  className="h-7 px-2 text-xs"
+                >
+                  Próxima
+                </Button>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       {/* Dialogs */}

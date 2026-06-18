@@ -12,6 +12,7 @@ import {
   ArrowDownRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 import {
   Dialog,
   DialogContent,
@@ -26,9 +27,6 @@ const EMPTY: GlobalSearchResults = {
   categorias: [],
   tipos: [],
 };
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 
 interface GroupConfig {
   key: keyof GlobalSearchResults;

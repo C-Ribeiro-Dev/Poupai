@@ -3,6 +3,7 @@ import { useTransition } from "react";
 import { CheckCircle2, Loader2, ArrowRight, Receipt } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,9 +20,6 @@ interface PagarDialogProps {
   onOpenChange: (open: boolean) => void;
   movimentacaoFixa: MovimentacaoFixaRow | null;
 }
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 
 export function PagarDialog({ open, onOpenChange, movimentacaoFixa: m }: PagarDialogProps) {
   const [isPending, startTransition] = useTransition();

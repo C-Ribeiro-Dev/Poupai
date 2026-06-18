@@ -1,15 +1,13 @@
 import Link from "next/link";
 import { BarChart3, PieChart, LineChart, CircleDollarSign } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 import {
   getAnalyticsData,
   PERIODO_LABELS,
   type AnalyticsPeriodo,
   type AnalyticsData,
 } from "@/services/analytics";
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 
 const formatCompact = (value: number) =>
   new Intl.NumberFormat("pt-BR", {

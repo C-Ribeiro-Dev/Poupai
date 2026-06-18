@@ -20,12 +20,8 @@ import {
   type TransferenciaFormData,
   type ContaRow,
 } from "@/types/contas";
+import { todayStr } from "@/lib/utils";
 import { transferirAction } from "@/actions/contas";
-
-const todayStr = (): string => {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-};
 
 interface TransferenciaDialogProps {
   open: boolean;
@@ -46,7 +42,7 @@ export function TransferenciaDialog({ open, onOpenChange, contas }: Transferenci
       form.reset({
         deContaId: 0,
         paraContaId: 0,
-        valor: undefined as unknown as number,
+        valor: NaN,
         data: todayStr(),
         descricao: "",
       });

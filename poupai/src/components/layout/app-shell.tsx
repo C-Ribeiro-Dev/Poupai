@@ -4,6 +4,7 @@ import { getNotificacoes } from "@/services/notificacoes";
 import type { Notificacao } from "@/services/notificacoes";
 import { Sidebar } from "./sidebar";
 import { Header } from "./header";
+import { QuickAddDialog } from "@/app/_components/quick-add-dialog";
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser();
@@ -31,6 +32,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
           notificacoes={notificacoes}
         />
         <main className="flex-1 overflow-y-auto">{children}</main>
+        <QuickAddDialog />
       </div>
     </div>
   );

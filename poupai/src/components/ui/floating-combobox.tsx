@@ -41,7 +41,7 @@ function FloatingCombobox({
   const inputId = id ?? generatedId
 
   const selectedLabel = options.find((o) => o.value === value)?.label ?? ""
-  const hasValue = !!value
+  const hasValue = !!selectedLabel
 
   const filtered = React.useMemo(
     () =>

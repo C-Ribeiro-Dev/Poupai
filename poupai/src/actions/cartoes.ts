@@ -1,5 +1,6 @@
 "use server";
 import { revalidatePath } from "next/cache";
+import { revalidateDashboard } from "@/lib/revalidate";
 import { getCurrentUserId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
@@ -182,11 +183,7 @@ export async function pagarFaturaAction(
     return { success: false, error: message };
   }
 
-  revalidatePath("/cartoes");
-  revalidatePath("/movimentacoes");
-  revalidatePath("/compromissos");
-  revalidatePath("/saldo-projetado");
-  revalidatePath("/");
+  revalidateDashboard("/cartoes", "/movimentacoes");
   return { success: true };
 }
 
@@ -254,11 +251,7 @@ export async function migrarMovimentacoesParaCartaoAction(
     });
   });
 
-  revalidatePath("/cartoes");
-  revalidatePath("/movimentacoes");
-  revalidatePath("/compromissos");
-  revalidatePath("/saldo-projetado");
-  revalidatePath("/");
+  revalidateDashboard("/cartoes", "/movimentacoes");
   return { success: true, migradas: novas.length, ignoradas };
 }
 
@@ -291,10 +284,6 @@ export async function desfazerPagamentoFaturaAction(
     return { success: false, error: message };
   }
 
-  revalidatePath("/cartoes");
-  revalidatePath("/movimentacoes");
-  revalidatePath("/compromissos");
-  revalidatePath("/saldo-projetado");
-  revalidatePath("/");
+  revalidateDashboard("/cartoes", "/movimentacoes");
   return { success: true };
 }

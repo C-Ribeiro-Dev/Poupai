@@ -41,9 +41,9 @@ export function CartaoFormDialog({ open, onOpenChange, cartao }: CartaoFormDialo
       form.reset({
         nome: cartao?.nome ?? "",
         bandeira: cartao?.bandeira ?? "",
-        limite: cartao?.limite ?? (undefined as unknown as number),
-        diaFechamento: cartao?.diaFechamento ?? (undefined as unknown as number),
-        diaVencimento: cartao?.diaVencimento ?? (undefined as unknown as number),
+        limite: cartao?.limite ?? NaN,
+        diaFechamento: cartao?.diaFechamento ?? NaN,
+        diaVencimento: cartao?.diaVencimento ?? NaN,
         cor: cartao?.cor ?? "#8b5cf6",
       });
     }

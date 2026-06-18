@@ -1,6 +1,7 @@
 "use client";
 import { Repeat2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,9 +17,6 @@ interface MovimentacaoDetailDialogProps {
   onOpenChange: (open: boolean) => void;
   movimentacao: MovimentacaoRow | null;
 }
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 
 const formatDate = (date: Date) =>
   new Intl.DateTimeFormat("pt-BR", {

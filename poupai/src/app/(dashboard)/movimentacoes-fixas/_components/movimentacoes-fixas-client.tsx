@@ -18,7 +18,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { FloatingInput } from "@/components/ui/floating-input";
 import { FloatingCombobox } from "@/components/ui/floating-combobox";
 import {
@@ -28,14 +30,16 @@ import {
 } from "@/types/movimentacoes-fixas";
 import type { TipoMovimentacaoRow } from "@/types/tipos";
 import type { CategoriaRow } from "@/types/categorias";
-import { desmarcarPagamentoAction } from "@/actions/movimentacoes-fixas";
+import {
+  desmarcarPagamentoAction,
+  batchMarcarComoPagoAction,
+} from "@/actions/movimentacoes-fixas";
 import { MovimentacaoFixaFormDialog } from "./movimentacao-fixa-form-dialog";
 import { DeleteMovimentacaoFixaDialog } from "./delete-movimentacao-fixa-dialog";
 import { MovimentacaoFixaDetailDialog } from "./movimentacao-fixa-detail-dialog";
 import { PagarDialog } from "./pagar-dialog";
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+import { RecorrentesSugestoes } from "./recorrentes-sugestoes";
+import type { RecorrenteSugestao } from "@/services/recorrentes";
 
 const formatVencimento = (row: MovimentacaoFixaRow): string => {
   if (row.diaVencimento) return `Dia ${row.diaVencimento}`;
@@ -123,6 +127,7 @@ interface MovimentacoesFixasClientProps {
   tipos: TipoMovimentacaoRow[];
   categorias: CategoriaRow[];
   initialSearch?: string;
+  sugestoesRecorrentes?: RecorrenteSugestao[];
 }
 
 export function MovimentacoesFixasClient({
@@ -130,6 +135,7 @@ export function MovimentacoesFixasClient({
   tipos,
   categorias,
   initialSearch,
+  sugestoesRecorrentes = [],
 }: MovimentacoesFixasClientProps) {
   const [search, setSearch] = useState(initialSearch ?? "");
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("todos");
@@ -142,8 +148,10 @@ export function MovimentacoesFixasClient({
   const [detailTarget, setDetailTarget] = useState<MovimentacaoFixaRow | null>(null);
   const [pagarTarget, setPagarTarget] = useState<MovimentacaoFixaRow | null>(null);
 
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [desmarcarPendingId, setDesmarcarPendingId] = useState<number | null>(null);
   const [, startDesmarcar] = useTransition();
+  const [batchPayPending, startBatchPay] = useTransition();
 
   function openCreate() {
     setEditTarget(null);
@@ -162,6 +170,46 @@ export function MovimentacoesFixasClient({
       setDesmarcarPendingId(null);
       if (result.success) toast.success("Pagamento desmarcado.");
       else toast.error(result.error);
+    });
+  }
+
+  function toggleSelectAll() {
+    if (allPendingSelected) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        pendingInFiltered.forEach((m) => next.delete(m.id));
+        return next;
+      });
+    } else {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        pendingInFiltered.forEach((m) => next.add(m.id));
+        return next;
+      });
+    }
+  }
+
+  function toggleSelectOne(id: number) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function handleBatchPay() {
+    const ids = [...selectedIds];
+    startBatchPay(async () => {
+      const result = await batchMarcarComoPagoAction(ids);
+      setSelectedIds(new Set());
+      if (result.success) {
+        toast.success(`${ids.length} pagamento${ids.length > 1 ? "s" : ""} registrado${ids.length > 1 ? "s" : ""}.`, {
+          description: "Movimentações criadas em Movimentações.",
+        });
+      } else {
+        toast.error(result.error);
+      }
     });
   }
 
@@ -221,6 +269,13 @@ export function MovimentacoesFixasClient({
   const hasActiveFilters =
     search.trim() !== "" || filterStatus !== "todos" || filterDirection !== "todos";
 
+  const pendingInFiltered = filtered.filter(
+    (m) => getMovimentacaoFixaStatus(m) !== "pago" && getMovimentacaoFixaStatus(m) !== "inativo" && m.ativo
+  );
+  const allPendingSelected =
+    pendingInFiltered.length > 0 && pendingInFiltered.every((m) => selectedIds.has(m.id));
+  const somePendingSelected = pendingInFiltered.some((m) => selectedIds.has(m.id));
+
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
       {/* Header */}
@@ -237,6 +292,9 @@ export function MovimentacoesFixasClient({
           <span className="sm:hidden">Nova</span>
         </Button>
       </div>
+
+      {/* Sugestões de gastos recorrentes */}
+      <RecorrentesSugestoes sugestoes={sugestoesRecorrentes} />
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -354,6 +412,34 @@ export function MovimentacoesFixasClient({
         </div>
       </div>
 
+      {/* Batch action bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center justify-between rounded-lg border border-emerald-300/50 bg-emerald-500/5 px-4 py-2.5 dark:border-emerald-800/50">
+          <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
+            {selectedIds.size} {selectedIds.size === 1 ? "item selecionado" : "itens selecionados"}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedIds(new Set())}
+              className="h-7 text-xs"
+            >
+              Limpar
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleBatchPay}
+              disabled={batchPayPending}
+              className="h-7 border-emerald-300 bg-emerald-600 text-xs text-white hover:bg-emerald-700 dark:border-emerald-800 dark:bg-emerald-700 dark:hover:bg-emerald-600"
+            >
+              <CheckCircle2 className="size-3.5" />
+              Pagar selecionados
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Table */}
       {movimentacoesFixas.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border py-16 text-center">
@@ -394,6 +480,15 @@ export function MovimentacoesFixasClient({
             <table className="w-full caption-bottom text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/40">
+                  <th className="w-10 px-3 py-3">
+                    <Checkbox
+                      checked={allPendingSelected}
+                      indeterminate={somePendingSelected && !allPendingSelected}
+                      onCheckedChange={toggleSelectAll}
+                      aria-label="Selecionar pendentes"
+                      disabled={pendingInFiltered.length === 0}
+                    />
+                  </th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Nome</th>
                   <th className="hidden px-4 py-3 text-left font-medium text-muted-foreground sm:table-cell">
                     Tipo
@@ -410,11 +505,22 @@ export function MovimentacoesFixasClient({
                 {filtered.map((m) => {
                   const status = getMovimentacaoFixaStatus(m);
                   const isDesmarcarPending = desmarcarPendingId === m.id;
+                  const isPending = status !== "pago" && status !== "inativo" && m.ativo;
                   return (
                     <tr
                       key={m.id}
-                      className="group bg-card transition-colors hover:bg-muted/40"
+                      className={cn("group bg-card transition-colors hover:bg-muted/40", selectedIds.has(m.id) && "bg-muted/50")}
                     >
+                      {/* Checkbox */}
+                      <td className="px-3 py-3">
+                        <Checkbox
+                          checked={selectedIds.has(m.id)}
+                          onCheckedChange={() => isPending && toggleSelectOne(m.id)}
+                          aria-label="Selecionar"
+                          disabled={!isPending}
+                        />
+                      </td>
+
                       {/* Nome */}
                       <td className="px-4 py-3">
                         <div className="flex flex-col gap-0.5">

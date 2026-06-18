@@ -1,5 +1,5 @@
 "use server";
-import { revalidatePath } from "next/cache";
+import { revalidateDashboard } from "@/lib/revalidate";
 import { getCurrentUserId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { dividaSchema, type DividaFormData } from "@/types/dividas";
@@ -28,10 +28,7 @@ export async function createDividaAction(data: DividaFormData): Promise<DividaRe
     },
   });
 
-  revalidatePath("/dividas");
-  revalidatePath("/compromissos");
-  revalidatePath("/saldo-projetado");
-  revalidatePath("/");
+  revalidateDashboard("/dividas");
   return { success: true };
 }
 
@@ -66,10 +63,7 @@ export async function updateDividaAction(
     },
   });
 
-  revalidatePath("/dividas");
-  revalidatePath("/compromissos");
-  revalidatePath("/saldo-projetado");
-  revalidatePath("/");
+  revalidateDashboard("/dividas");
   return { success: true };
 }
 
@@ -87,10 +81,7 @@ export async function pagarParcelaAction(id: number): Promise<DividaResult> {
     data: { parcelasPagas: novasPagas, quitada },
   });
 
-  revalidatePath("/dividas");
-  revalidatePath("/compromissos");
-  revalidatePath("/saldo-projetado");
-  revalidatePath("/");
+  revalidateDashboard("/dividas");
   return { success: true };
 }
 
@@ -100,10 +91,7 @@ export async function deleteDividaAction(id: number): Promise<DividaResult> {
   if (!exists) return { success: false, error: "Dívida não encontrada." };
 
   await prisma.divida.update({ where: { id }, data: { isDeleted: true } });
-  revalidatePath("/dividas");
-  revalidatePath("/compromissos");
-  revalidatePath("/saldo-projetado");
-  revalidatePath("/");
+  revalidateDashboard("/dividas");
   return { success: true };
 }
 
@@ -114,9 +102,6 @@ export async function batchDeleteDividaAction(ids: number[]): Promise<DividaResu
     where: { id: { in: ids }, userId, isDeleted: false },
     data: { isDeleted: true },
   });
-  revalidatePath("/dividas");
-  revalidatePath("/compromissos");
-  revalidatePath("/saldo-projetado");
-  revalidatePath("/");
+  revalidateDashboard("/dividas");
   return { success: true };
 }

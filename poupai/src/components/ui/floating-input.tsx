@@ -13,20 +13,34 @@ function FloatingInput({
   error,
   className,
   id,
+  type,
   disabled,
+  onClick,
   ...props
 }: FloatingInputProps) {
   const generatedId = React.useId()
   const inputId = id ?? generatedId
+  const isDate = type === "date"
+
+  function handleClick(e: React.MouseEvent<HTMLInputElement>) {
+    if (isDate) {
+      try {
+        (e.currentTarget as HTMLInputElement & { showPicker?: () => void }).showPicker?.()
+      } catch {}
+    }
+    onClick?.(e)
+  }
 
   return (
     <div className="flex flex-col gap-1.5">
       <div className="relative">
         <input
           id={inputId}
+          type={type}
           disabled={disabled}
           placeholder=" "
           data-slot="input"
+          onClick={handleClick}
           className={cn(
             "peer h-14 w-full rounded-xl border border-white/10 bg-white/[0.05] px-4 pb-2.5 pt-5 text-sm text-foreground transition-all duration-200 outline-none",
             "placeholder:opacity-0",
@@ -45,8 +59,8 @@ function FloatingInput({
             "pointer-events-none absolute left-4 select-none transition-all duration-200",
             // Valor preenchido ou focado → label no topo
             "top-2.5 text-[0.7rem] font-medium text-ring",
-            // Vazio e sem foco → label centralizado
-            "peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-sm peer-placeholder-shown:font-semibold peer-placeholder-shown:text-foreground/70",
+            // Vazio e sem foco → label centralizado (não aplica em date — browser já mostra o formato)
+            !isDate && "peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-sm peer-placeholder-shown:font-semibold peer-placeholder-shown:text-foreground/70",
             // Foco → volta ao topo com cor da marca
             "peer-focus:top-2.5 peer-focus:translate-y-0 peer-focus:text-[0.7rem] peer-focus:font-medium peer-focus:text-ring",
             // Disabled

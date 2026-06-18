@@ -9,6 +9,7 @@ import {
   Loader2,
   ChevronRight,
   AlertTriangle,
+  Calculator,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -18,6 +19,7 @@ import type { DividaRow } from "@/types/dividas";
 import { pagarParcelaAction, deleteDividaAction, batchDeleteDividaAction } from "@/actions/dividas";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DividaFormDialog } from "./divida-form-dialog";
+import { AmortizacaoDialog } from "./amortizacao-dialog";
 import {
   Dialog,
   DialogContent,
@@ -35,6 +37,7 @@ export function DividasClient({ dividas }: Props) {
   const [formOpen, setFormOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<DividaRow | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DividaRow | null>(null);
+  const [amortizacaoTarget, setAmortizacaoTarget] = useState<DividaRow | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
   const [isBatchPending, startBatchTransition] = useTransition();
@@ -176,6 +179,7 @@ export function DividasClient({ dividas }: Props) {
               divida={d}
               onEdit={() => openEdit(d)}
               onDelete={() => setDeleteTarget(d)}
+              onSimular={() => setAmortizacaoTarget(d)}
               isSelected={selectedIds.has(d.id)}
               onToggle={() => toggleSelect(d.id)}
             />
@@ -189,6 +193,7 @@ export function DividasClient({ dividas }: Props) {
                   divida={d}
                   onEdit={() => openEdit(d)}
                   onDelete={() => setDeleteTarget(d)}
+                  onSimular={() => setAmortizacaoTarget(d)}
                   isSelected={selectedIds.has(d.id)}
                   onToggle={() => toggleSelect(d.id)}
                 />
@@ -202,6 +207,12 @@ export function DividasClient({ dividas }: Props) {
         open={formOpen}
         onOpenChange={setFormOpen}
         divida={editTarget}
+      />
+
+      <AmortizacaoDialog
+        open={!!amortizacaoTarget}
+        onOpenChange={(v) => { if (!v) setAmortizacaoTarget(null); }}
+        divida={amortizacaoTarget}
       />
 
       <ExcluirDividaDialog
@@ -240,12 +251,14 @@ function DividaCard({
   divida: d,
   onEdit,
   onDelete,
+  onSimular,
   isSelected,
   onToggle,
 }: {
   divida: DividaRow;
   onEdit: () => void;
   onDelete: () => void;
+  onSimular: () => void;
   isSelected: boolean;
   onToggle: () => void;
 }) {
@@ -367,6 +380,15 @@ function DividaCard({
               Pagar parcela
             </Button>
           )}
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={onSimular}
+            aria-label="Simular amortização"
+            title="Simular amortização"
+          >
+            <Calculator className="size-3.5" />
+          </Button>
           <Button variant="ghost" size="icon-sm" onClick={onEdit} aria-label="Editar">
             <Pencil className="size-3.5" />
           </Button>

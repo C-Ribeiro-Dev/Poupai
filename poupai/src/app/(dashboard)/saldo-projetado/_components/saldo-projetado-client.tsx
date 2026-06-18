@@ -166,6 +166,8 @@ interface DiaGroup {
 
 export function SaldoProjetadoClient({ data }: { data: SaldoProjetadoData }) {
   const [periodo, setPeriodo] = useState<PeriodoProjetado>("mes_atual");
+  const [rendaExtra, setRendaExtra] = useState(0);
+  const [corteVariaveis, setCorteVariaveis] = useState(0);
 
   const now = useMemo(() => new Date(), []);
 
@@ -206,6 +208,15 @@ export function SaldoProjetadoClient({ data }: { data: SaldoProjetadoData }) {
 
   const variacaoPeriodo = saldoFinalPeriodo - saldoInicialPeriodo;
   const temNegativoNoPeriodo = eventosFiltrados.some((e) => e.saldoDepois < 0);
+
+  const totalVariaveis = useMemo(
+    () =>
+      eventosFiltrados
+        .filter((e) => e.tipo === "movimentacao_saida")
+        .reduce((s, e) => s + e.valor, 0),
+    [eventosFiltrados]
+  );
+  const saldoAjustado = saldoFinalPeriodo + rendaExtra + totalVariaveis * (corteVariaveis / 100);
 
   const alertasNoPeriodo = useMemo(() => {
     const inicio = periodoToInicio(periodo, now);
@@ -277,6 +288,88 @@ export function SaldoProjetadoClient({ data }: { data: SaldoProjetadoData }) {
           </p>
           {data.menorSaldo.data && (
             <p className="text-[10px] text-muted-foreground">{fmtDia(data.menorSaldo.data)}</p>
+          )}
+        </div>
+      </div>
+
+      {/* Análise de cenários */}
+      <div className="rounded-xl border border-border bg-card p-5">
+        <h2 className="text-sm font-semibold">Análise de cenários</h2>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          Simule o impacto de mudanças no saldo projetado do período
+        </p>
+        <div className="mt-4 flex flex-col gap-5">
+          <div>
+            <div className="mb-1.5 flex items-center justify-between text-xs">
+              <label className="font-medium">Renda extra no período</label>
+              <span className={cn("font-semibold tabular-nums", rendaExtra >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400")}>
+                {rendaExtra >= 0 ? "+" : ""}
+                {fmt(rendaExtra)}
+              </span>
+            </div>
+            <input
+              type="range"
+              min={-2000}
+              max={5000}
+              step={100}
+              value={rendaExtra}
+              onChange={(e) => setRendaExtra(Number(e.target.value))}
+              className="w-full accent-primary"
+            />
+            <div className="mt-0.5 flex justify-between text-[10px] text-muted-foreground">
+              <span>-R$2.000</span>
+              <span>+R$5.000</span>
+            </div>
+          </div>
+
+          <div>
+            <div className="mb-1.5 flex items-center justify-between text-xs">
+              <label className="font-medium">Corte de gastos variáveis</label>
+              <span className="font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
+                {corteVariaveis}%
+              </span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={50}
+              step={5}
+              value={corteVariaveis}
+              onChange={(e) => setCorteVariaveis(Number(e.target.value))}
+              className="w-full accent-primary"
+            />
+            <div className="mt-0.5 flex justify-between text-[10px] text-muted-foreground">
+              <span>0%</span>
+              <span>50%</span>
+            </div>
+          </div>
+
+          {(rendaExtra !== 0 || corteVariaveis !== 0) && (
+            <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 px-4 py-3">
+              <div>
+                <p className="text-xs text-muted-foreground">Saldo base</p>
+                <p className="font-semibold tabular-nums">{fmt(saldoFinalPeriodo)}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-muted-foreground">Saldo ajustado</p>
+                <p
+                  className={cn(
+                    "font-semibold tabular-nums",
+                    saldoAjustado > saldoFinalPeriodo
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : saldoAjustado < 0
+                      ? "text-red-600 dark:text-red-400"
+                      : ""
+                  )}
+                >
+                  {fmt(saldoAjustado)}
+                  <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                    ({saldoAjustado - saldoFinalPeriodo >= 0 ? "+" : ""}
+                    {fmt(saldoAjustado - saldoFinalPeriodo)})
+                  </span>
+                </p>
+              </div>
+            </div>
           )}
         </div>
       </div>

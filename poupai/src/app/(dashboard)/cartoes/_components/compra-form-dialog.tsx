@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, ShoppingCart, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, todayStr } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { FloatingInput } from "@/components/ui/floating-input";
@@ -21,10 +21,6 @@ import { compraCartaoSchema, type CompraCartaoFormData, type CartaoRow } from "@
 import type { CategoriaRow } from "@/types/categorias";
 import { createCompraCartaoAction } from "@/actions/cartoes";
 
-const todayStr = (): string => {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-};
 
 interface CompraFormDialogProps {
   open: boolean;
@@ -52,7 +48,7 @@ export function CompraFormDialog({ open, onOpenChange, cartao, categorias }: Com
         categoria: "",
         responsavel: "",
         recorrente: false,
-        valorTotal: undefined as unknown as number,
+        valorTotal: NaN,
         parcelas: 1,
         dataCompra: todayStr(),
       });

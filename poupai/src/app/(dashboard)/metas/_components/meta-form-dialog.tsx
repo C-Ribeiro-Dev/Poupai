@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Check } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, toDateInputValue } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { FloatingInput } from "@/components/ui/floating-input";
 import { Label } from "@/components/ui/label";
@@ -20,10 +20,6 @@ import { metaSchema, type MetaFormData, type MetaRow } from "@/types/metas";
 import { CORES_DISPONIVEIS } from "@/lib/categorias-config";
 import { createMetaAction, updateMetaAction } from "@/actions/metas";
 
-const toDateInputValue = (date: Date): string => {
-  const d = new Date(date);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-};
 
 interface MetaFormDialogProps {
   open: boolean;
@@ -47,7 +43,7 @@ export function MetaFormDialog({ open, onOpenChange, meta }: MetaFormDialogProps
       form.reset({
         nome: meta?.nome ?? "",
         descricao: meta?.descricao ?? "",
-        valorAlvo: meta?.valorAlvo ?? (undefined as unknown as number),
+        valorAlvo: meta?.valorAlvo ?? NaN,
         dataAlvo: meta?.dataAlvo ? toDateInputValue(meta.dataAlvo) : "",
         cor: meta?.cor ?? "#22c55e",
       });

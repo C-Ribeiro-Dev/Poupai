@@ -11,10 +11,27 @@ import {
   ArrowUpDown,
   LineChart,
 } from "lucide-react";
+import {
+  ResponsiveContainer,
+  LineChart as RechartsLineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
 import { cn } from "@/lib/utils";
 import { formatCurrency, formatCompactCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
-import { getClasseInfo, type AtivoRow, type InvestimentosData } from "@/types/investimentos";
+import {
+  getClasseInfo,
+  type AtivoRow,
+  type InvestimentosData,
+  type DistribuicaoClasse,
+} from "@/types/investimentos";
 import { AtivoFormDialog } from "./ativo-form-dialog";
 import { DeleteAtivoDialog } from "./delete-ativo-dialog";
 import { LancamentosDialog } from "./lancamentos-dialog";
@@ -116,15 +133,7 @@ export function InvestimentosClient({ data }: InvestimentosClientProps) {
                 </p>
               ) : (
                 <div className="mt-4 flex flex-col gap-3">
-                  <div className="flex h-2.5 w-full gap-px overflow-hidden rounded-full">
-                    {data.distribuicao.map((d) => (
-                      <div
-                        key={d.classe}
-                        title={`${d.label}: ${formatCurrency(d.valor)} (${d.percentual.toFixed(1)}%)`}
-                        style={{ width: `${d.percentual}%`, backgroundColor: d.cor }}
-                      />
-                    ))}
-                  </div>
+                  <DistribuicaoChart distribuicao={data.distribuicao} />
                   {data.distribuicao.map((d) => (
                     <div key={d.classe} className="flex items-center gap-2.5">
                       <span className="size-2.5 shrink-0 rounded-sm" style={{ backgroundColor: d.cor }} />
@@ -137,6 +146,23 @@ export function InvestimentosClient({ data }: InvestimentosClientProps) {
                       </span>
                     </div>
                   ))}
+                  {(() => {
+                    const max = data.distribuicao.reduce<DistribuicaoClasse | null>(
+                      (a, b) => (!a || b.percentual > a.percentual ? b : a),
+                      null
+                    );
+                    if (!max) return null;
+                    if (data.distribuicao.length === 1 || max.percentual > 60) {
+                      return (
+                        <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-800/30 dark:bg-amber-900/20 dark:text-amber-300">
+                          {data.distribuicao.length === 1
+                            ? "Carteira com apenas uma classe de ativo. Diversifique para reduzir riscos."
+                            : `${max.label} representa ${max.percentual.toFixed(0)}% da carteira. Considere diversificar.`}
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
               )}
             </div>
@@ -284,6 +310,9 @@ function KpiMini({
   );
 }
 
+const CHART_GRID = "rgba(128,128,128,0.15)";
+const CHART_AXIS = "#9ca3af";
+
 function EvolucaoChart({ evolucao }: { evolucao: { label: string; valor: number }[] }) {
   const temDados = evolucao.some((e) => e.valor !== 0);
   if (!temDados) {
@@ -293,50 +322,89 @@ function EvolucaoChart({ evolucao }: { evolucao: { label: string; valor: number 
       </p>
     );
   }
-
-  const W = 600;
-  const H = 150;
-  const PAD = 8;
-  const valores = evolucao.map((e) => e.valor);
-  const minV = Math.min(0, ...valores);
-  const maxV = Math.max(0, ...valores);
-  const range = maxV - minV || 1;
-  const x = (i: number) => (i / (evolucao.length - 1)) * W;
-  const y = (v: number) => PAD + ((maxV - v) / range) * (H - PAD * 2);
-  const linePath = valores.map((v, i) => `${i === 0 ? "M" : "L"} ${x(i)} ${y(v)}`).join(" ");
-  const areaPath = `M 0 ${y(Math.max(minV, 0))} ${valores
-    .map((v, i) => `L ${x(i)} ${y(v)}`)
-    .join(" ")} L ${W} ${y(Math.max(minV, 0))} Z`;
-
   return (
-    <div className="mt-4">
-      <svg
-        viewBox={`0 0 ${W} ${H}`}
-        preserveAspectRatio="none"
-        className="h-32 w-full text-violet-500"
-        role="img"
-        aria-label="Evolução do patrimônio investido"
-      >
-        <path d={areaPath} fill="currentColor" opacity="0.12" />
-        <path
-          d={linePath}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinejoin="round"
-          strokeLinecap="round"
-          vectorEffect="non-scaling-stroke"
-        />
-      </svg>
-      <div className="mt-2 flex justify-between border-t border-border pt-2">
-        {evolucao
-          .filter((_, i) => i % 2 === 0)
-          .map((e, i) => (
-            <span key={i} className="text-[10px] text-muted-foreground">
-              {e.label}
-            </span>
-          ))}
-      </div>
+    <div className="mt-4 h-36">
+      <ResponsiveContainer width="100%" height="100%">
+        <RechartsLineChart data={evolucao} margin={{ top: 4, right: 8, left: -10, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} vertical={false} />
+          <XAxis
+            dataKey="label"
+            tick={{ fontSize: 10, fill: CHART_AXIS }}
+            axisLine={false}
+            tickLine={false}
+            interval="preserveStartEnd"
+          />
+          <YAxis
+            tickFormatter={(v: number) =>
+              v === 0 ? "0" : Math.abs(v) >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)
+            }
+            tick={{ fontSize: 10, fill: CHART_AXIS }}
+            axisLine={false}
+            tickLine={false}
+            width={40}
+          />
+          <RechartsTooltip
+            content={({ active, payload, label }: any) => {
+              if (!active || !payload?.length) return null;
+              return (
+                <div className="rounded-lg border border-border bg-card px-3 py-2 text-xs shadow-lg">
+                  <p className="font-medium">{label}</p>
+                  <p className="tabular-nums text-violet-500">
+                    {formatCurrency(payload[0].value as number)}
+                  </p>
+                </div>
+              );
+            }}
+          />
+          <Line
+            type="monotone"
+            dataKey="valor"
+            stroke="#8b5cf6"
+            strokeWidth={2}
+            dot={{ r: 2.5, fill: "#8b5cf6", strokeWidth: 0 }}
+            activeDot={{ r: 4, fill: "#8b5cf6" }}
+          />
+        </RechartsLineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+function DistribuicaoChart({ distribuicao }: { distribuicao: DistribuicaoClasse[] }) {
+  return (
+    <div className="h-40">
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={distribuicao}
+            dataKey="valor"
+            nameKey="label"
+            cx="50%"
+            cy="50%"
+            innerRadius="38%"
+            outerRadius="68%"
+            paddingAngle={2}
+          >
+            {distribuicao.map((d) => (
+              <Cell key={d.classe} fill={d.cor} />
+            ))}
+          </Pie>
+          <RechartsTooltip
+            content={({ active, payload }: any) => {
+              if (!active || !payload?.length) return null;
+              const d = payload[0].payload as DistribuicaoClasse;
+              return (
+                <div className="rounded-lg border border-border bg-card px-3 py-2 text-xs shadow-lg">
+                  <p className="font-medium">{d.label}</p>
+                  <p className="tabular-nums">
+                    {formatCurrency(d.valor)} · {d.percentual.toFixed(1)}%
+                  </p>
+                </div>
+              );
+            }}
+          />
+        </PieChart>
+      </ResponsiveContainer>
     </div>
   );
 }

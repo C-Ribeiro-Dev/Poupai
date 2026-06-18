@@ -10,6 +10,7 @@ import type { OrcamentosData } from "@/services/orcamentos";
 import { getCategoriaIcon } from "@/lib/categorias-config";
 import { OrcamentoFormDialog } from "./orcamento-form-dialog";
 import { DeleteOrcamentoDialog } from "./delete-orcamento-dialog";
+import { OrcamentoHistoricoChart, type HistoricoMes } from "./orcamento-historico-chart";
 
 const statusConfig: Record<
   OrcamentoStatus,
@@ -38,9 +39,10 @@ const statusConfig: Record<
 interface OrcamentoClientProps {
   data: OrcamentosData;
   categorias: CategoriaRow[];
+  historico: HistoricoMes[];
 }
 
-export function OrcamentoClient({ data, categorias }: OrcamentoClientProps) {
+export function OrcamentoClient({ data, categorias, historico }: OrcamentoClientProps) {
   const [createOpen, setCreateOpen] = useState(false);
   const [editItem, setEditItem] = useState<OrcamentoRow | null>(null);
   const [deleteItem, setDeleteItem] = useState<OrcamentoRow | null>(null);
@@ -114,6 +116,9 @@ export function OrcamentoClient({ data, categorias }: OrcamentoClientProps) {
           </div>
         </div>
       )}
+
+      {/* Histórico */}
+      <OrcamentoHistoricoChart historico={historico} />
 
       {/* Empty state */}
       {orcamentos.length === 0 ? (

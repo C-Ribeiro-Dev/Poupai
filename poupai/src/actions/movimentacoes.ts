@@ -1,5 +1,6 @@
 "use server";
 import { revalidatePath } from "next/cache";
+import { revalidateDashboard } from "@/lib/revalidate";
 import { getCurrentUser, getCurrentUserId } from "@/lib/auth";
 import { isAdminEmail } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
@@ -42,10 +43,7 @@ export async function createMovimentacaoAction(
     },
   });
 
-  revalidatePath("/movimentacoes");
-  revalidatePath("/compromissos");
-  revalidatePath("/saldo-projetado");
-  revalidatePath("/");
+  revalidateDashboard("/movimentacoes");
   return { success: true };
 }
 
@@ -90,10 +88,7 @@ export async function updateMovimentacaoAction(
     },
   });
 
-  revalidatePath("/movimentacoes");
-  revalidatePath("/compromissos");
-  revalidatePath("/saldo-projetado");
-  revalidatePath("/");
+  revalidateDashboard("/movimentacoes");
   return { success: true };
 }
 
@@ -124,11 +119,7 @@ export async function deleteMovimentacaoAction(
     }
   });
 
-  revalidatePath("/movimentacoes");
-  revalidatePath("/movimentacoes-fixas");
-  revalidatePath("/compromissos");
-  revalidatePath("/saldo-projetado");
-  revalidatePath("/");
+  revalidateDashboard("/movimentacoes", "/movimentacoes-fixas");
   return { success: true };
 }
 
@@ -158,11 +149,7 @@ export async function batchDeleteMovimentacaoAction(
     }
   });
 
-  revalidatePath("/movimentacoes");
-  revalidatePath("/movimentacoes-fixas");
-  revalidatePath("/compromissos");
-  revalidatePath("/saldo-projetado");
-  revalidatePath("/");
+  revalidateDashboard("/movimentacoes", "/movimentacoes-fixas");
   return { success: true };
 }
 

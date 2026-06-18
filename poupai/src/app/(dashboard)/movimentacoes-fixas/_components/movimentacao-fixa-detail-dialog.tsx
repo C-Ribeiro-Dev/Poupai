@@ -1,6 +1,7 @@
 "use client";
 import { CalendarCheck, Coins, Tag, AlignLeft, CreditCard, Calendar, Power } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 import {
   Dialog,
   DialogContent,
@@ -18,9 +19,6 @@ interface MovimentacaoFixaDetailDialogProps {
   onOpenChange: (open: boolean) => void;
   movimentacaoFixa: MovimentacaoFixaRow | null;
 }
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 
 const formatDate = (date: Date) =>
   new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "long", year: "numeric" }).format(

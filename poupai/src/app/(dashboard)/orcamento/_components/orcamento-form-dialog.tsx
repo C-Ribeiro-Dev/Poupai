@@ -44,7 +44,7 @@ export function OrcamentoFormDialog({
     if (open) {
       form.reset({
         categoria: orcamento?.categoria ?? "",
-        valor: orcamento?.valor ?? (undefined as unknown as number),
+        valor: orcamento?.valor ?? NaN,
       });
     }
   }, [open, orcamento, form]);

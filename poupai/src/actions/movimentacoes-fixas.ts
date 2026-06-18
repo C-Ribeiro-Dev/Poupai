@@ -1,5 +1,5 @@
 "use server";
-import { revalidatePath } from "next/cache";
+import { revalidateDashboard } from "@/lib/revalidate";
 import { getCurrentUserId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
@@ -52,10 +52,7 @@ export async function createMovimentacaoFixaAction(
     },
   });
 
-  revalidatePath("/movimentacoes-fixas");
-  revalidatePath("/compromissos");
-  revalidatePath("/saldo-projetado");
-  revalidatePath("/");
+  revalidateDashboard("/movimentacoes-fixas");
   return { success: true };
 }
 
@@ -100,10 +97,7 @@ export async function updateMovimentacaoFixaAction(
     },
   });
 
-  revalidatePath("/movimentacoes-fixas");
-  revalidatePath("/compromissos");
-  revalidatePath("/saldo-projetado");
-  revalidatePath("/");
+  revalidateDashboard("/movimentacoes-fixas");
   return { success: true };
 }
 
@@ -121,10 +115,7 @@ export async function deleteMovimentacaoFixaAction(id: number): Promise<FixaActi
     data: { isDeleted: true },
   });
 
-  revalidatePath("/movimentacoes-fixas");
-  revalidatePath("/compromissos");
-  revalidatePath("/saldo-projetado");
-  revalidatePath("/");
+  revalidateDashboard("/movimentacoes-fixas");
   return { success: true };
 }
 
@@ -138,11 +129,7 @@ export async function marcarComoPagoAction(id: number): Promise<FixaActionResult
     return { success: false, error: message };
   }
 
-  revalidatePath("/movimentacoes-fixas");
-  revalidatePath("/movimentacoes");
-  revalidatePath("/compromissos");
-  revalidatePath("/saldo-projetado");
-  revalidatePath("/");
+  revalidateDashboard("/movimentacoes-fixas", "/movimentacoes");
   return { success: true };
 }
 
@@ -156,10 +143,26 @@ export async function desmarcarPagamentoAction(id: number): Promise<FixaActionRe
     return { success: false, error: message };
   }
 
-  revalidatePath("/movimentacoes-fixas");
-  revalidatePath("/movimentacoes");
-  revalidatePath("/compromissos");
-  revalidatePath("/saldo-projetado");
-  revalidatePath("/");
+  revalidateDashboard("/movimentacoes-fixas", "/movimentacoes");
+  return { success: true };
+}
+
+export async function batchMarcarComoPagoAction(ids: number[]): Promise<FixaActionResult> {
+  const userId = await getCurrentUserId();
+  if (ids.length === 0) return { success: false, error: "Nenhum item selecionado." };
+
+  let successful = 0;
+  const errors: string[] = [];
+  for (const id of ids) {
+    try {
+      await executarPagamentoFixa(id, userId);
+      successful++;
+    } catch (err) {
+      errors.push(err instanceof Error ? err.message : "Erro desconhecido");
+    }
+  }
+
+  revalidateDashboard("/movimentacoes-fixas", "/movimentacoes");
+  if (successful === 0) return { success: false, error: errors[0] ?? "Nenhum pagamento registrado." };
   return { success: true };
 }

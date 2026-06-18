@@ -53,6 +53,8 @@ interface ImportarClientProps {
   sugestoes: Record<string, string>;
   idsImportados: string[];
   idsComprasImportadas: string[];
+  initialModo?: "conta" | "cartao";
+  initialCartaoId?: number;
 }
 
 const selectClass =
@@ -68,11 +70,13 @@ export function ImportarClient({
   sugestoes,
   idsImportados,
   idsComprasImportadas,
+  initialModo = "conta",
+  initialCartaoId = 0,
 }: ImportarClientProps) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const [modo, setModo] = useState<Modo>("conta");
+  const [modo, setModo] = useState<Modo>(initialModo);
   const [linhasConta, setLinhasConta] = useState<LinhaContaPreview[]>([]);
   const [linhasCartao, setLinhasCartao] = useState<LinhaCartaoPreview[]>([]);
   const [nomeArquivo, setNomeArquivo] = useState("");
@@ -80,7 +84,7 @@ export function ImportarClient({
   const [tipoEntradaId, setTipoEntradaId] = useState(0);
   const [tipoSaidaId, setTipoSaidaId] = useState(0);
   const [contaId, setContaId] = useState(0);
-  const [cartaoId, setCartaoId] = useState(0);
+  const [cartaoId, setCartaoId] = useState(initialCartaoId);
 
   const [isPending, startTransition] = useTransition();
 

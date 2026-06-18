@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, PiggyBank } from "lucide-react";
 import { toast } from "sonner";
+import { todayStr } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { FloatingInput } from "@/components/ui/floating-input";
@@ -18,10 +19,6 @@ import {
 import { aporteSchema, type AporteFormData, type MetaRow } from "@/types/metas";
 import { aportarMetaAction } from "@/actions/metas";
 
-const todayStr = (): string => {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-};
 
 interface AporteDialogProps {
   open: boolean;
@@ -39,7 +36,7 @@ export function AporteDialog({ open, onOpenChange, meta }: AporteDialogProps) {
 
   useEffect(() => {
     if (open) {
-      form.reset({ valor: undefined as unknown as number, data: todayStr() });
+      form.reset({ valor: NaN, data: todayStr() });
     }
   }, [open, form]);
 

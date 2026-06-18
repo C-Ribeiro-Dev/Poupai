@@ -16,6 +16,7 @@ import {
   Telescope,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 import { getCurrentUser, getCurrentUserId } from "@/lib/auth";
 import { getDashboardData } from "@/services/dashboard";
 import { parsePeriodo } from "@/services/analytics";
@@ -36,11 +37,11 @@ import { GastosInteligentesCard } from "./gastos-inteligentes-card";
 import { getGastosInteligentes } from "@/services/gastos-inteligentes";
 import { GastosCartaoCategoriaCard } from "./gastos-cartao-categoria-card";
 import { getGastosCartaoPorCategoria } from "@/services/gastos-cartao-categoria";
+import { CartaoVsDinheiroCard } from "./cartao-vs-dinheiro-card";
+import { getCartaoVsDinheiro } from "@/services/cartao-vs-dinheiro";
+import { OnboardingGuia } from "./onboarding-guia";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 
 function getGreeting(name?: string | null): string {
   const hour = new Date().getHours();
@@ -365,7 +366,7 @@ export async function DashboardContent({
     mesRef.getFullYear() === now.getFullYear() && mesRef.getMonth() === now.getMonth();
   const periodo = parsePeriodo(periodoParam);
 
-  const [user, data, dinheiroDisponivel, compromissos, saldoProjetado, situacao, plano, gastos, gastosCartao] = await Promise.all([
+  const [user, data, dinheiroDisponivel, compromissos, saldoProjetado, situacao, plano, gastos, gastosCartao, cartaoVsDinheiro] = await Promise.all([
     getCurrentUser(),
     getDashboardData(userId, mesRef),
     getDinheiroDisponivel(userId),
@@ -375,6 +376,7 @@ export async function DashboardContent({
     getPlanoAcao(userId),
     getGastosInteligentes(userId),
     getGastosCartaoPorCategoria(userId, "6m"),
+    getCartaoVsDinheiro(userId, mesRef),
   ]);
   const name = user?.user_metadata?.nome as string | undefined;
 
@@ -383,6 +385,11 @@ export async function DashboardContent({
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
+      {/* ── Onboarding para novos usuários ── */}
+      <OnboardingGuia
+        mostrar={data.ultimasMovimentacoes.length === 0 && data.saldoTotal === 0}
+      />
+
       {/* ── Greeting + período ── */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl font-semibold tracking-tight">{getGreeting(name)}</h1>
@@ -476,6 +483,7 @@ export async function DashboardContent({
         <PlanoAcaoCard data={plano} />
         <GastosInteligentesCard data={gastos} />
         <GastosCartaoCategoriaCard data={gastosCartao} />
+        <CartaoVsDinheiroCard data={cartaoVsDinheiro} />
       </div>
 
       {/* ── Insights do mês ── */}

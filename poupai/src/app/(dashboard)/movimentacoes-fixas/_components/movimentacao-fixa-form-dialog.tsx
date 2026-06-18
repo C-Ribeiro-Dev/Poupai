@@ -4,7 +4,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, toDateInputValue } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { FloatingInput } from "@/components/ui/floating-input";
 import { FloatingCombobox } from "@/components/ui/floating-combobox";
@@ -29,10 +29,6 @@ import {
   updateMovimentacaoFixaAction,
 } from "@/actions/movimentacoes-fixas";
 
-const toDateInputValue = (date: Date): string => {
-  const d = new Date(date);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-};
 
 interface MovimentacaoFixaFormDialogProps {
   open: boolean;
@@ -73,7 +69,7 @@ export function MovimentacaoFixaFormDialog({
       form.reset({
         tipoMovimentacaoId: movimentacaoFixa?.tipoMovimentacaoId ?? 0,
         nome: movimentacaoFixa?.nome ?? "",
-        valor: movimentacaoFixa?.valor ?? (undefined as unknown as number),
+        valor: movimentacaoFixa?.valor ?? NaN,
         diaVencimento: movimentacaoFixa?.diaVencimento ?? undefined,
         dataFim: movimentacaoFixa?.dataFim ? toDateInputValue(movimentacaoFixa.dataFim) : "",
         categoria: movimentacaoFixa?.categoria ?? "",

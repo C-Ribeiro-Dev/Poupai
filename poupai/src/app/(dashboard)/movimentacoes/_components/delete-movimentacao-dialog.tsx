@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { formatCurrency } from "@/lib/format";
 import { deleteMovimentacaoAction, hardDeleteMovimentacaoAction } from "@/actions/movimentacoes";
 import type { MovimentacaoRow } from "@/types/movimentacoes";
 
@@ -54,9 +55,6 @@ export function DeleteMovimentacaoDialog({
       }
     });
   }
-
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 
   return (
     <Dialog open={open} onOpenChange={isPending ? undefined : onOpenChange}>

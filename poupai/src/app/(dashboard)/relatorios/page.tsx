@@ -11,6 +11,7 @@ import {
   type RelatorioPeriodo,
   type RelatorioLinhaCategoria,
 } from "@/services/relatorios";
+import { RelatorioCharts } from "./_components/relatorio-charts";
 
 export const metadata: Metadata = { title: "Relatórios" };
 
@@ -79,6 +80,12 @@ export default async function RelatoriosPage({
               tom={data.saldo >= 0 ? "positivo" : "negativo"}
             />
           </div>
+
+          {/* Gráficos */}
+          <RelatorioCharts
+            fluxoMensal={data.fluxoMensal}
+            despesasPorCategoria={data.despesasPorCategoria}
+          />
 
           {/* Fluxo de caixa */}
           {data.fluxoMensal.length > 1 && (

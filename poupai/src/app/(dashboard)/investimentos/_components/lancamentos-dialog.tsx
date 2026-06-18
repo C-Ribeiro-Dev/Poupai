@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Trash2, ArrowUpRight, ArrowDownRight, Coins } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, todayStr } from "@/lib/utils";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { FloatingInput } from "@/components/ui/floating-input";
@@ -23,10 +23,6 @@ import {
 } from "@/types/investimentos";
 import { createLancamentoAction, deleteLancamentoAction } from "@/actions/investimentos";
 
-const todayStr = (): string => {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-};
 
 const tipoIcon: Record<string, { icon: React.ElementType; cls: string }> = {
   aporte: { icon: ArrowUpRight, cls: "bg-emerald-500/10 text-emerald-500" },
@@ -58,7 +54,7 @@ export function LancamentosDialog({ open, onOpenChange, ativo }: LancamentosDial
     if (open) {
       form.reset({
         tipo: "aporte",
-        valor: undefined as unknown as number,
+        valor: NaN,
         data: todayStr(),
         observacao: "",
       });
