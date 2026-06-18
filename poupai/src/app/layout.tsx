@@ -27,6 +27,12 @@ export const metadata: Metadata = {
     template: "%s | Poupai",
   },
   description: "Controle financeiro pessoal",
+  manifest: "/manifest.json",
+  icons: {
+    icon: [{ url: "/icons/icon.svg", type: "image/svg+xml" }],
+    shortcut: "/icons/icon.svg",
+    apple: [{ url: "/icons/icon.svg", type: "image/svg+xml" }],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
