@@ -46,12 +46,15 @@ export default async function AdminPage() {
     : data.users.map((u) => ({
         id: u.id,
         email: u.email ?? "—",
-        nome: (u.user_metadata?.nome as string | undefined) ?? null,
+        nome: ((u.user_metadata?.name ?? u.user_metadata?.nome) as string | undefined) ?? null,
         criadoEm: u.created_at,
         ultimoLogin: u.last_sign_in_at ?? null,
         isAdmin: isAdminEmail(u.email),
-        senhaTemp: (u.user_metadata?.senha_temp as string | undefined) ?? null,
-        acessoCompartilhado: !!(u.user_metadata?.acesso_compartilhado as boolean | undefined),
+        senhaTemp:
+          ((u.user_metadata?.temp_password ?? u.user_metadata?.senha_temp) as string | undefined) ?? null,
+        acessoCompartilhado: !!u.user_metadata?.shared_account_id,
+        contaCompartilhadaId:
+          (u.user_metadata?.shared_account_id as string | undefined) ?? null,
       }));
 
   return (

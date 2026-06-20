@@ -3,7 +3,12 @@ import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { isAdminEmail, hasServiceRoleKey } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { novoUsuarioSchema, type NovoUsuarioFormData } from "@/types/admin";
+import {
+  novoUsuarioSchema,
+  editarUsuarioSchema,
+  type NovoUsuarioFormData,
+  type EditarUsuarioFormData,
+} from "@/types/admin";
 
 export type AdminActionResult = { success: true } | { success: false; error: string };
 
@@ -36,9 +41,9 @@ export async function createUsuarioAction(
     password: parsed.data.senha,
     email_confirm: true,
     user_metadata: {
-      nome: parsed.data.nome,
-      senha_temp: parsed.data.senha,
-      acesso_compartilhado: false,
+      name: parsed.data.nome,
+      temp_password: parsed.data.senha,
+      shared_account_id: null,
     },
   });
 
@@ -48,6 +53,32 @@ export async function createUsuarioAction(
       : error.message;
     return { success: false, error: msg };
   }
+
+  revalidatePath("/admin");
+  return { success: true };
+}
+
+export async function updateUsuarioAction(
+  userId: string,
+  data: EditarUsuarioFormData
+): Promise<AdminActionResult> {
+  const guard = await requireAdmin();
+  if (guard) return guard;
+
+  const parsed = editarUsuarioSchema.safeParse(data);
+  if (!parsed.success) return { success: false, error: "Dados inválidos." };
+
+  const admin = createAdminClient();
+  const { error } = await admin.auth.admin.updateUserById(userId, {
+    email: parsed.data.email,
+    ...(parsed.data.senha ? { password: parsed.data.senha } : {}),
+    user_metadata: {
+      name: parsed.data.nome,
+      ...(parsed.data.senha ? { temp_password: parsed.data.senha } : {}),
+    },
+  });
+
+  if (error) return { success: false, error: error.message };
 
   revalidatePath("/admin");
   return { success: true };
@@ -70,16 +101,16 @@ export async function deleteUsuarioAction(userId: string): Promise<AdminActionRe
   return { success: true };
 }
 
-export async function toggleAcessoCompartilhadoAction(
+export async function setAcessoCompartilhadoAction(
   userId: string,
-  novoValor: boolean
+  contaId: string | null
 ): Promise<AdminActionResult> {
   const guard = await requireAdmin();
   if (guard) return guard;
 
   const admin = createAdminClient();
   const { error } = await admin.auth.admin.updateUserById(userId, {
-    user_metadata: { acesso_compartilhado: novoValor },
+    user_metadata: { shared_account_id: contaId },
   });
   if (error) return { success: false, error: error.message };
 
