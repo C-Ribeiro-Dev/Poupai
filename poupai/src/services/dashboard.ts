@@ -30,6 +30,7 @@ export async function getDashboardData(userId: string, mesRef?: Date): Promise<D
     cartoesAtivos,
     comprasCartao,
     dividasProximoMes,
+    pagamentosProximoMes,
   ] = await Promise.all([
     prisma.movimentacao.aggregate({
       where: {
@@ -134,22 +135,19 @@ export async function getDashboardData(userId: string, mesRef?: Date): Promise<D
       },
     }),
     prisma.divida.findMany({
-      where: {
-        userId,
-        isDeleted: false,
-        quitada: false,
-        dataProxVencimento: {
-          gte: new Date(now.getFullYear(), now.getMonth() + 1, 1),
-          lt: new Date(now.getFullYear(), now.getMonth() + 2, 1),
-        },
-      },
+      where: { userId, isDeleted: false, quitada: false },
       select: {
         credor: true,
         valorTotal: true,
         taxaJurosMensal: true,
         nParcelas: true,
         parcelasPagas: true,
+        dataInicio: true,
       },
+    }),
+    prisma.faturaPagamento.findMany({
+      where: { userId },
+      select: { cartaoId: true, mesRef: true, valor: true },
     }),
   ]);
 
@@ -199,8 +197,16 @@ export async function getDashboardData(userId: string, mesRef?: Date): Promise<D
   // Para cada cartão, qual mesRef tem vencimento no próximo mês?
   // Se diaVencimento > diaFechamento → a fatura fecha e vence no mesmo mês → mesRef = proximoMesKey
   // Se diaVencimento <= diaFechamento → a fatura fecha em M e vence em M+1 → mesRef = mês atual
-  let totalFaturasProximoMes = 0;
   const currentMonthKey = mesRefToString({ ano: now.getFullYear(), mes: now.getMonth() });
+
+  // Mapa de pagamentos já realizados por fatura: "cartaoId:mesRef" → valor pago
+  const pagamentosMap = new Map<string, number>();
+  for (const p of pagamentosProximoMes) {
+    const key = `${p.cartaoId}:${p.mesRef}`;
+    pagamentosMap.set(key, (pagamentosMap.get(key) ?? 0) + Number(String(p.valor)));
+  }
+
+  let totalFaturasProximoMes = 0;
   const cartaoTotaisMap = new Map<number, { nome: string; valor: number }>();
 
   for (const cartao of cartoesAtivos) {
@@ -223,10 +229,14 @@ export async function getDashboardData(userId: string, mesRef?: Date): Promise<D
       }
     }
 
-    if (totalCartao > 0) {
-      cartaoTotaisMap.set(cartao.id, { nome: cartao.nome, valor: totalCartao });
+    // Desconta pagamentos antecipados já realizados nesta fatura
+    const pago = pagamentosMap.get(`${cartao.id}:${targetMesRef}`) ?? 0;
+    const saldo = Math.max(0, totalCartao - pago);
+
+    if (saldo > 0) {
+      cartaoTotaisMap.set(cartao.id, { nome: cartao.nome, valor: saldo });
     }
-    totalFaturasProximoMes += totalCartao;
+    totalFaturasProximoMes += saldo;
   }
 
   const totalCartoesProximoMes = [...cartaoTotaisMap.values()].reduce((s, c) => s + c.valor, 0);
@@ -241,6 +251,12 @@ export async function getDashboardData(userId: string, mesRef?: Date): Promise<D
   let totalDividasProximoMes = 0;
   for (const d of dividasProximoMes) {
     if (d.parcelasPagas >= d.nParcelas) continue;
+    // Calcula o mês do próximo vencimento a partir da data de início + parcelas pagas
+    const inicio = new Date(d.dataInicio);
+    const proxMesIdx = d.parcelasPagas + 1;
+    const proxVencDate = new Date(inicio.getFullYear(), inicio.getMonth() + proxMesIdx, 1);
+    const proxVencKey = mesRefToString({ ano: proxVencDate.getFullYear(), mes: proxVencDate.getMonth() });
+    if (proxVencKey !== proximoMesKey) continue;
     totalDividasProximoMes += calcParcela(
       Number(String(d.valorTotal)),
       Number(String(d.taxaJurosMensal)),

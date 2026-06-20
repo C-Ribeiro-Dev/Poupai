@@ -76,9 +76,13 @@ export async function pagarParcelaAction(id: number): Promise<DividaResult> {
   const novasPagas = divida.parcelasPagas + 1;
   const quitada = novasPagas >= divida.nParcelas;
 
+  // Avança dataProxVencimento 1 mês a partir do dataInicio + parcelas pagas
+  const inicio = new Date(divida.dataInicio);
+  const proxVenc = new Date(inicio.getFullYear(), inicio.getMonth() + novasPagas + 1, inicio.getDate());
+
   await prisma.divida.update({
     where: { id },
-    data: { parcelasPagas: novasPagas, quitada },
+    data: { parcelasPagas: novasPagas, quitada, dataProxVencimento: quitada ? null : proxVenc },
   });
 
   revalidateDashboard("/dividas");
