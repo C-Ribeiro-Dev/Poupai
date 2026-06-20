@@ -98,6 +98,9 @@ interface KpiCardProps {
   valueColor?: string;
   sublabel?: string;
   className?: string;
+  trend?: { text: string; className: string } | null;
+  breakdown?: { label: string; value: string }[];
+  hint?: React.ReactNode;
 }
 
 function KpiCard({
@@ -109,6 +112,9 @@ function KpiCard({
   valueColor,
   sublabel,
   className,
+  trend,
+  breakdown,
+  hint,
 }: KpiCardProps) {
   return (
     <div className={cn("rounded-xl border border-border bg-card p-4", className)}>
@@ -121,7 +127,38 @@ function KpiCard({
       <p className={cn("mt-3 text-2xl font-bold tabular-nums", valueColor ?? "text-foreground")}>
         {value}
       </p>
-      {sublabel && <p className="mt-0.5 text-xs text-muted-foreground">{sublabel}</p>}
+      {sublabel && (
+        <div className="mt-0.5 flex items-center gap-2">
+          <p className="text-xs text-muted-foreground">{sublabel}</p>
+          {trend && (
+            <span className={cn("text-xs font-medium tabular-nums", trend.className)}>
+              {trend.text}
+            </span>
+          )}
+        </div>
+      )}
+      {breakdown && breakdown.length > 0 && (
+        <div className="mt-2 space-y-0.5 border-t border-border/50 pt-2">
+          {breakdown.map((item) => (
+            <div key={item.label} className="flex items-center justify-between gap-2">
+              <span className="truncate text-xs text-muted-foreground">{item.label}</span>
+              <span className="shrink-0 text-xs font-medium tabular-nums">{item.value}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      {hint && <div className="mt-2">{hint}</div>}
+    </div>
+  );
+}
+
+function SectionLabel({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+        {label}
+      </span>
+      <div className="h-px flex-1 bg-border" />
     </div>
   );
 }
@@ -400,150 +437,105 @@ export async function DashboardContent({
         />
       </div>
 
-      {/* ── KPI Cards ── */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-7">
-        {/* Saldo Total — destaque */}
-        <KpiCard
-          className="col-span-2 md:col-span-1"
-          icon={Wallet}
-          iconBg={saldoPositivo ? "bg-emerald-500/10" : "bg-red-500/10"}
-          iconColor={saldoPositivo ? "text-emerald-500" : "text-red-500"}
-          label="Saldo total"
-          value={formatCurrency(data.saldoTotal)}
-          valueColor={
-            saldoPositivo
-              ? "text-emerald-600 dark:text-emerald-400"
-              : "text-red-600 dark:text-red-400"
-          }
-          sublabel="acumulado"
-        />
+      {/* ── Este mês ── */}
+      <section className="flex flex-col gap-3">
+        <SectionLabel label="Este mês" />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <KpiCard
+            icon={Wallet}
+            iconBg={saldoPositivo ? "bg-emerald-500/10" : "bg-red-500/10"}
+            iconColor={saldoPositivo ? "text-emerald-500" : "text-red-500"}
+            label="Saldo total"
+            value={formatCurrency(data.saldoTotal)}
+            valueColor={saldoPositivo ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}
+            sublabel="acumulado"
+          />
+          <KpiCard
+            icon={TrendingUp}
+            iconBg="bg-emerald-500/10"
+            iconColor="text-emerald-500"
+            label="Receitas"
+            value={formatCurrency(data.resumoMes.receitas)}
+            valueColor="text-emerald-600 dark:text-emerald-400"
+            sublabel={`em ${data.mes}`}
+            trend={data.resumoMes.variacaoReceitas != null ? {
+              text: `${data.resumoMes.variacaoReceitas >= 0 ? "▲" : "▼"} ${Math.abs(data.resumoMes.variacaoReceitas).toFixed(0)}% vs mês ant.`,
+              className: data.resumoMes.variacaoReceitas >= 0 ? "text-emerald-500" : "text-red-500",
+            } : null}
+          />
+          <KpiCard
+            icon={TrendingDown}
+            iconBg="bg-red-500/10"
+            iconColor="text-red-500"
+            label="Despesas"
+            value={formatCurrency(data.resumoMes.despesas)}
+            sublabel={`em ${data.mes}`}
+            trend={data.resumoMes.variacaoDespesas != null ? {
+              text: `${data.resumoMes.variacaoDespesas >= 0 ? "▲" : "▼"} ${Math.abs(data.resumoMes.variacaoDespesas).toFixed(0)}% vs mês ant.`,
+              className: data.resumoMes.variacaoDespesas >= 0 ? "text-red-500" : "text-emerald-500",
+            } : null}
+          />
+        </div>
+      </section>
 
-        {/* Receitas do mês */}
-        <KpiCard
-          icon={TrendingUp}
-          iconBg="bg-emerald-500/10"
-          iconColor="text-emerald-500"
-          label="Receitas"
-          value={formatCurrency(data.resumoMes.receitas)}
-          valueColor="text-emerald-600 dark:text-emerald-400"
-          sublabel={`em ${data.mes}`}
-        />
+      {/* ── Compromissos ── */}
+      <section className="flex flex-col gap-3">
+        <SectionLabel label="Compromissos" />
+        <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+          <KpiCard
+            className={data.fixasVencidas > 0 ? "border-red-300 dark:border-red-800/60" : ""}
+            icon={data.fixasVencidas > 0 ? AlertCircle : CalendarClock}
+            iconBg={data.fixasVencidas > 0 ? "bg-red-500/10" : "bg-amber-500/10"}
+            iconColor={data.fixasVencidas > 0 ? "text-red-500" : "text-amber-500"}
+            label="Fixas pendentes"
+            value={String(data.fixasPendentes)}
+            valueColor={data.fixasVencidas > 0 ? "text-red-600 dark:text-red-400" : "text-amber-600 dark:text-amber-400"}
+            sublabel={data.fixasVencidas > 0 ? `${data.fixasVencidas} vencida${data.fixasVencidas > 1 ? "s" : ""}` : "aguardando pagamento"}
+          />
+          <KpiCard
+            icon={CheckCircle2}
+            iconBg="bg-emerald-500/10"
+            iconColor="text-emerald-500"
+            label="Fixas pagas"
+            value={String(data.fixasPagas)}
+            valueColor="text-emerald-600 dark:text-emerald-400"
+            sublabel="neste ciclo"
+          />
+          <KpiCard
+            icon={ArrowUpRight}
+            iconBg="bg-emerald-500/10"
+            iconColor="text-emerald-500"
+            label="A receber"
+            value={formatCurrency(data.previsaoProximoMes.receitas)}
+            valueColor="text-emerald-600 dark:text-emerald-400"
+            sublabel={`em ${data.previsaoProximoMes.mesNome}`}
+            hint={data.previsaoProximoMes.receitas === 0 ? (
+              <Link href="/movimentacoes-fixas" className="text-xs text-primary underline-offset-2 hover:underline">
+                + Adicionar receita fixa
+              </Link>
+            ) : null}
+          />
+          <KpiCard
+            icon={ArrowDownRight}
+            iconBg="bg-indigo-500/10"
+            iconColor="text-indigo-500"
+            label="A pagar"
+            value={formatCurrency(data.previsaoProximoMes.despesas)}
+            valueColor="text-indigo-600 dark:text-indigo-400"
+            sublabel={`em ${data.previsaoProximoMes.mesNome}`}
+            breakdown={[
+              ...(data.previsaoProximoMes.totalFixas > 0 ? [{ label: "Fixas", value: formatCurrency(data.previsaoProximoMes.totalFixas) }] : []),
+              ...(data.previsaoProximoMes.totalCartoes > 0 ? [{ label: "Cartões", value: formatCurrency(data.previsaoProximoMes.totalCartoes) }] : []),
+              ...(data.previsaoProximoMes.totalDividas > 0 ? [{ label: "Dívidas", value: formatCurrency(data.previsaoProximoMes.totalDividas) }] : []),
+            ]}
+          />
+        </div>
+      </section>
 
-        {/* Despesas do mês */}
-        <KpiCard
-          icon={TrendingDown}
-          iconBg="bg-red-500/10"
-          iconColor="text-red-500"
-          label="Despesas"
-          value={formatCurrency(data.resumoMes.despesas)}
-          sublabel={`em ${data.mes}`}
-        />
-
-        {/* Fixas pendentes */}
-        <KpiCard
-          className={
-            data.fixasVencidas > 0
-              ? "border-red-300 dark:border-red-800/60"
-              : ""
-          }
-          icon={data.fixasVencidas > 0 ? AlertCircle : CalendarClock}
-          iconBg={data.fixasVencidas > 0 ? "bg-red-500/10" : "bg-amber-500/10"}
-          iconColor={data.fixasVencidas > 0 ? "text-red-500" : "text-amber-500"}
-          label="Fixas pendentes"
-          value={String(data.fixasPendentes)}
-          valueColor={
-            data.fixasVencidas > 0
-              ? "text-red-600 dark:text-red-400"
-              : "text-amber-600 dark:text-amber-400"
-          }
-          sublabel={
-            data.fixasVencidas > 0
-              ? `${data.fixasVencidas} vencida${data.fixasVencidas > 1 ? "s" : ""}`
-              : "aguardando pagamento"
-          }
-        />
-
-        {/* Fixas pagas */}
-        <KpiCard
-          icon={CheckCircle2}
-          iconBg="bg-emerald-500/10"
-          iconColor="text-emerald-500"
-          label="Fixas pagas"
-          value={String(data.fixasPagas)}
-          valueColor="text-emerald-600 dark:text-emerald-400"
-          sublabel="neste ciclo"
-        />
-
-        {/* A receber no próximo mês */}
-        <KpiCard
-          icon={ArrowUpRight}
-          iconBg="bg-emerald-500/10"
-          iconColor="text-emerald-500"
-          label="A receber"
-          value={formatCurrency(data.previsaoProximoMes.receitas)}
-          valueColor="text-emerald-600 dark:text-emerald-400"
-          sublabel={`em ${data.previsaoProximoMes.mesNome}`}
-        />
-
-        {/* A pagar no próximo mês */}
-        <KpiCard
-          icon={ArrowDownRight}
-          iconBg="bg-indigo-500/10"
-          iconColor="text-indigo-500"
-          label="A pagar"
-          value={formatCurrency(data.previsaoProximoMes.despesas)}
-          valueColor="text-indigo-600 dark:text-indigo-400"
-          sublabel={`em ${data.previsaoProximoMes.mesNome}`}
-        />
-      </div>
-
-      {/* ── Análise + Plano + Gastos ── */}
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <DinheiroDisponivelCard data={dinheiroDisponivel} />
-        <SaldoProjetadoCard data={saldoProjetado} />
-        <SituacaoFinanceiraCard data={situacao} />
-        <PlanoAcaoCard data={plano} />
-        <GastosInteligentesCard data={gastos} />
-        <GastosCartaoCategoriaCard data={gastosCartao} />
-        <CartaoVsDinheiroCard data={cartaoVsDinheiro} />
-      </div>
-
-      {/* ── Insights do mês ── */}
-      {(data.insights.topGasto ||
-        data.insights.topReceita ||
-        data.insights.totalLancamentos > 0 ||
-        data.orcamento) && (
+      {/* ── Alertas de orçamento ── */}
+      {data.orcamento && (data.orcamento.categoriasEstouradas.length > 0 || data.orcamento.categoriasEmAtencao.length > 0) && (
         <div className="flex flex-wrap gap-2">
-          {data.insights.totalLancamentos > 0 && (
-            <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
-              <BarChart2 className="size-3.5 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">
-                <span className="font-semibold text-foreground">{data.insights.totalLancamentos}</span>{" "}
-                lançamento{data.insights.totalLancamentos !== 1 ? "s" : ""} em {data.mes}
-              </span>
-            </div>
-          )}
-          {data.insights.topGasto && (
-            <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
-              <TrendingDown className="size-3.5 text-red-500" />
-              <span className="text-xs text-muted-foreground">
-                Maior gasto:{" "}
-                <span className="font-semibold text-foreground">{data.insights.topGasto.categoria}</span>{" "}
-                <span className="tabular-nums">({formatCurrency(data.insights.topGasto.valor)})</span>
-              </span>
-            </div>
-          )}
-          {data.insights.topReceita && (
-            <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
-              <TrendingUp className="size-3.5 text-emerald-500" />
-              <span className="text-xs text-muted-foreground">
-                Maior receita:{" "}
-                <span className="font-semibold text-foreground">{data.insights.topReceita.categoria}</span>{" "}
-                <span className="tabular-nums">({formatCurrency(data.insights.topReceita.valor)})</span>
-              </span>
-            </div>
-          )}
-          {data.orcamento && data.orcamento.categoriasEstouradas.length > 0 && (
+          {data.orcamento.categoriasEstouradas.length > 0 && (
             <Link
               href="/orcamento"
               className="flex items-center gap-2 rounded-lg border border-red-300 bg-red-500/5 px-3 py-2 transition-colors hover:bg-red-500/10 dark:border-red-800/60"
@@ -551,191 +543,100 @@ export async function DashboardContent({
               <AlertCircle className="size-3.5 text-red-500" />
               <span className="text-xs text-red-600 dark:text-red-400">
                 Orçamento estourado:{" "}
-                <span className="font-semibold">
-                  {data.orcamento.categoriasEstouradas.join(", ")}
-                </span>
+                <span className="font-semibold">{data.orcamento.categoriasEstouradas.join(", ")}</span>
               </span>
             </Link>
           )}
-          {data.orcamento &&
-            data.orcamento.categoriasEstouradas.length === 0 &&
-            data.orcamento.categoriasEmAtencao.length > 0 && (
-              <Link
-                href="/orcamento"
-                className="flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-500/5 px-3 py-2 transition-colors hover:bg-amber-500/10 dark:border-amber-800/60"
-              >
-                <AlertCircle className="size-3.5 text-amber-500" />
-                <span className="text-xs text-amber-600 dark:text-amber-400">
-                  Quase no limite:{" "}
-                  <span className="font-semibold">
-                    {data.orcamento.categoriasEmAtencao.join(", ")}
-                  </span>
-                </span>
-              </Link>
-            )}
-        </div>
-      )}
-
-      {/* ── Saldo do mês (barra) ── */}
-      {(data.resumoMes.receitas > 0 || data.resumoMes.despesas > 0) && (
-        <div className="rounded-xl border border-border bg-card px-5 py-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">
-              Resultado de {data.mes}
-            </span>
-            <span
-              className={cn(
-                "text-sm font-semibold tabular-nums",
-                saldoMesPositivo
-                  ? "text-emerald-600 dark:text-emerald-400"
-                  : "text-red-600 dark:text-red-400"
-              )}
+          {data.orcamento.categoriasEstouradas.length === 0 && data.orcamento.categoriasEmAtencao.length > 0 && (
+            <Link
+              href="/orcamento"
+              className="flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-500/5 px-3 py-2 transition-colors hover:bg-amber-500/10 dark:border-amber-800/60"
             >
-              {saldoMesPositivo ? "+" : "−"}
-              {formatCurrency(Math.abs(data.resumoMes.saldo))}
-            </span>
-          </div>
-          <div className="mt-3 flex items-center gap-2">
-            <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-muted">
-              {data.resumoMes.receitas > 0 && data.resumoMes.despesas > 0 && (() => {
-                const total = data.resumoMes.receitas + data.resumoMes.despesas;
-                const receitasPct = (data.resumoMes.receitas / total) * 100;
-                const despesasPct = (data.resumoMes.despesas / total) * 100;
-                return (
-                  <>
-                    <div
-                      className="absolute left-0 top-0 h-full rounded-full bg-emerald-500 transition-all"
-                      style={{ width: `${receitasPct}%` }}
-                    />
-                    <div
-                      className="absolute right-0 top-0 h-full rounded-full bg-red-500 transition-all"
-                      style={{ width: `${despesasPct}%` }}
-                    />
-                  </>
-                );
-              })()}
-              {data.resumoMes.receitas > 0 && data.resumoMes.despesas === 0 && (
-                <div className="absolute inset-0 rounded-full bg-emerald-500" />
-              )}
-              {data.resumoMes.despesas > 0 && data.resumoMes.receitas === 0 && (
-                <div className="absolute inset-0 rounded-full bg-red-500" />
-              )}
-            </div>
-          </div>
-          <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <span className="inline-block size-2 rounded-full bg-emerald-500" />
-              Receitas {formatCurrency(data.resumoMes.receitas)}
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="inline-block size-2 rounded-full bg-red-500" />
-              Despesas {formatCurrency(data.resumoMes.despesas)}
-            </span>
-          </div>
+              <AlertCircle className="size-3.5 text-amber-500" />
+              <span className="text-xs text-amber-600 dark:text-amber-400">
+                Quase no limite:{" "}
+                <span className="font-semibold">{data.orcamento.categoriasEmAtencao.join(", ")}</span>
+              </span>
+            </Link>
+          )}
         </div>
       )}
 
-      {/* ── Projeção fim do mês ── */}
-      {isCurrentMonth && (data.projecao.receitasPendentes > 0 || data.projecao.despesasPendentes > 0) && (
-        <div className="rounded-xl border border-border bg-card px-5 py-4">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="flex size-7 items-center justify-center rounded-lg bg-blue-500/10">
-              <Telescope className="size-3.5 text-blue-500" />
-            </div>
-            <span className="text-sm font-semibold">Projeção fim do mês</span>
-            <span className="text-xs text-muted-foreground">se pagar todas as fixas pendentes</span>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <div className="flex flex-col gap-0.5">
-              <span className="text-xs text-muted-foreground">Saldo atual</span>
-              <span className={cn(
-                "text-sm font-semibold tabular-nums",
-                data.saldoTotal >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
-              )}>
-                {formatCurrency(data.saldoTotal)}
-              </span>
-            </div>
-            {data.projecao.despesasPendentes > 0 && (
-              <div className="flex flex-col gap-0.5">
-                <span className="text-xs text-muted-foreground">Fixas a pagar</span>
-                <span className="text-sm font-semibold tabular-nums text-red-600 dark:text-red-400">
-                  −{formatCurrency(data.projecao.despesasPendentes)}
-                </span>
+      {/* ── Hoje ── */}
+      <section className="flex flex-col gap-3">
+        <SectionLabel label="Hoje" />
+        <div className="grid gap-4 md:grid-cols-2">
+          <PlanoAcaoCard data={plano} />
+          <DinheiroDisponivelCard data={dinheiroDisponivel} />
+        </div>
+      </section>
+
+      {/* ── Análise financeira ── */}
+      <section className="flex flex-col gap-3">
+        <SectionLabel label="Análise" />
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <SituacaoFinanceiraCard data={situacao} />
+          <SaldoProjetadoCard data={saldoProjetado} />
+          <GastosInteligentesCard data={gastos} />
+        </div>
+      </section>
+
+      {/* ── Cartões ── */}
+      <section className="flex flex-col gap-3">
+        <SectionLabel label="Cartões" />
+        <div className="grid gap-4 md:grid-cols-2">
+          <GastosCartaoCategoriaCard data={gastosCartao} />
+          <CartaoVsDinheiroCard data={cartaoVsDinheiro} />
+        </div>
+      </section>
+
+      {/* ── Próximos e histórico ── */}
+      <section className="flex flex-col gap-3">
+        <SectionLabel label="Próximos e histórico" />
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {/* Próximos Vencimentos */}
+          <div className="overflow-hidden rounded-xl border border-border bg-card">
+            <SectionHeader
+              title="Próximos vencimentos"
+              viewAllHref="/movimentacoes-fixas"
+              viewAllLabel="Ver fixas"
+            />
+            {data.proximosVencimentos.length === 0 ? (
+              <EmptyVencimentos />
+            ) : (
+              <div className="divide-y divide-border">
+                {data.proximosVencimentos.map((item) => (
+                  <ProximoVencimentoRow key={item.id} item={item} />
+                ))}
               </div>
             )}
-            {data.projecao.receitasPendentes > 0 && (
-              <div className="flex flex-col gap-0.5">
-                <span className="text-xs text-muted-foreground">Receitas fixas</span>
-                <span className="text-sm font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
-                  +{formatCurrency(data.projecao.receitasPendentes)}
-                </span>
+          </div>
+
+          {/* Últimas Movimentações */}
+          <div className="overflow-hidden rounded-xl border border-border bg-card">
+            <SectionHeader
+              title="Últimas movimentações"
+              viewAllHref="/movimentacoes"
+              viewAllLabel="Ver todas"
+            />
+            {data.ultimasMovimentacoes.length === 0 ? (
+              <EmptyMovimentacoes />
+            ) : (
+              <div className="divide-y divide-border">
+                {data.ultimasMovimentacoes.map((m) => (
+                  <MovimentacaoRecenteRow key={m.id} {...m} />
+                ))}
               </div>
             )}
-            <div className="flex flex-col gap-0.5">
-              <span className="text-xs text-muted-foreground">Saldo projetado</span>
-              <span className={cn(
-                "text-base font-bold tabular-nums",
-                data.projecao.saldoProjetado >= 0
-                  ? "text-emerald-600 dark:text-emerald-400"
-                  : "text-red-600 dark:text-red-400"
-              )}>
-                {formatCurrency(data.projecao.saldoProjetado)}
-              </span>
-            </div>
           </div>
         </div>
-      )}
 
-      {/* ── Próximos Compromissos ── */}
-      <ProximosCompromissosCard data={compromissos} />
-
-      {/* ── Inteligência financeira ── */}
-      <InteligenciaSection userId={userId} />
-
-      {/* ── Analytics ── */}
-      <AnalyticsSection userId={userId} periodo={periodo} mesParam={mesParam} />
-
-      {/* ── Content grid ── */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {/* Próximos Vencimentos */}
-        <div className="overflow-hidden rounded-xl border border-border bg-card">
-          <SectionHeader
-            title="Próximos vencimentos"
-            viewAllHref="/movimentacoes-fixas"
-            viewAllLabel="Ver fixas"
-          />
-          {data.proximosVencimentos.length === 0 ? (
-            <EmptyVencimentos />
-          ) : (
-            <div className="divide-y divide-border">
-              {data.proximosVencimentos.map((item) => (
-                <ProximoVencimentoRow key={item.id} item={item} />
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Últimas Movimentações */}
-        <div className="overflow-hidden rounded-xl border border-border bg-card">
-          <SectionHeader
-            title="Últimas movimentações"
-            viewAllHref="/movimentacoes"
-            viewAllLabel="Ver todas"
-          />
-          {data.ultimasMovimentacoes.length === 0 ? (
-            <EmptyMovimentacoes />
-          ) : (
-            <div className="divide-y divide-border">
-              {data.ultimasMovimentacoes.map((m) => (
-                <MovimentacaoRecenteRow key={m.id} {...m} />
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Próximos Compromissos */}
+        <ProximosCompromissosCard data={compromissos} />
 
         {/* Metas em andamento */}
         {data.metas.length > 0 && (
-          <div className="overflow-hidden rounded-xl border border-border bg-card lg:col-span-2">
+          <div className="overflow-hidden rounded-xl border border-border bg-card">
             <SectionHeader title="Metas em andamento" viewAllHref="/metas" viewAllLabel="Ver metas" />
             <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-3">
               {data.metas.map((m) => (
@@ -763,7 +664,14 @@ export async function DashboardContent({
             </div>
           </div>
         )}
-      </div>
+      </section>
+
+      {/* ── Inteligência e Analytics ── */}
+      <section className="flex flex-col gap-3">
+        <SectionLabel label="Explorar" />
+        <InteligenciaSection userId={userId} />
+        <AnalyticsSection userId={userId} periodo={periodo} mesParam={mesParam} />
+      </section>
     </div>
   );
 }

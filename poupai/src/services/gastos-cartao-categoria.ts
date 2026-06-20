@@ -8,22 +8,32 @@ export interface CategoriaCartaoItem {
   quantidade: number;
 }
 
+export type PeriodoCartao = "7d" | "1m" | "3m" | "6m" | "12m" | "total";
+
 export interface GastosCartaoCategoriaData {
   categorias: CategoriaCartaoItem[];
   totalGeral: number;
-  periodo: "3m" | "6m" | "12m" | "total";
+  periodo: PeriodoCartao;
 }
 
 export async function getGastosCartaoPorCategoria(
   userId: string,
-  periodo: "3m" | "6m" | "12m" | "total" = "6m"
+  periodo: PeriodoCartao = "6m"
 ): Promise<GastosCartaoCategoriaData> {
   const now = new Date();
   let dataInicio: Date | undefined;
 
-  if (periodo === "3m") dataInicio = new Date(now.getFullYear(), now.getMonth() - 2, 1);
-  else if (periodo === "6m") dataInicio = new Date(now.getFullYear(), now.getMonth() - 5, 1);
-  else if (periodo === "12m") dataInicio = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+  if (periodo === "7d") {
+    dataInicio = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
+  } else if (periodo === "1m") {
+    dataInicio = new Date(now.getFullYear(), now.getMonth(), 1);
+  } else if (periodo === "3m") {
+    dataInicio = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+  } else if (periodo === "6m") {
+    dataInicio = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+  } else if (periodo === "12m") {
+    dataInicio = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+  }
 
   const compras = await prisma.compraCartao.findMany({
     where: {

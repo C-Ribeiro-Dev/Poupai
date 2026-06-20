@@ -6,7 +6,7 @@ import {
   movimentacaoFixaSchema,
   type MovimentacaoFixaFormData,
 } from "@/types/movimentacoes-fixas";
-import { executarPagamentoFixa, desfazerPagamentoFixa } from "@/services/pagamento-fixa";
+import { executarPagamentoFixa, desfazerPagamentoFixa, pularCicloFixa } from "@/services/pagamento-fixa";
 
 export type FixaActionResult = { success: true } | { success: false; error: string };
 
@@ -133,6 +133,20 @@ export async function marcarComoPagoAction(id: number): Promise<FixaActionResult
   return { success: true };
 }
 
+export async function pularCicloAction(id: number): Promise<FixaActionResult> {
+  const userId = await getCurrentUserId();
+
+  try {
+    await pularCicloFixa(id, userId);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Erro ao pular ciclo.";
+    return { success: false, error: message };
+  }
+
+  revalidateDashboard("/movimentacoes-fixas");
+  return { success: true };
+}
+
 export async function desmarcarPagamentoAction(id: number): Promise<FixaActionResult> {
   const userId = await getCurrentUserId();
 
@@ -144,6 +158,25 @@ export async function desmarcarPagamentoAction(id: number): Promise<FixaActionRe
   }
 
   revalidateDashboard("/movimentacoes-fixas", "/movimentacoes");
+  return { success: true };
+}
+
+export async function batchPularCicloAction(ids: number[]): Promise<FixaActionResult> {
+  const userId = await getCurrentUserId();
+  if (ids.length === 0) return { success: false, error: "Nenhum item selecionado." };
+
+  let successful = 0;
+  for (const id of ids) {
+    try {
+      await pularCicloFixa(id, userId);
+      successful++;
+    } catch {
+      // continua nos demais
+    }
+  }
+
+  revalidateDashboard("/movimentacoes-fixas");
+  if (successful === 0) return { success: false, error: "Nenhum ciclo foi pulado." };
   return { success: true };
 }
 

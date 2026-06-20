@@ -15,6 +15,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   TrendingDown,
+  SkipForward,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -33,6 +34,7 @@ import type { CategoriaRow } from "@/types/categorias";
 import {
   desmarcarPagamentoAction,
   batchMarcarComoPagoAction,
+  batchPularCicloAction,
 } from "@/actions/movimentacoes-fixas";
 import { MovimentacaoFixaFormDialog } from "./movimentacao-fixa-form-dialog";
 import { DeleteMovimentacaoFixaDialog } from "./delete-movimentacao-fixa-dialog";
@@ -152,6 +154,7 @@ export function MovimentacoesFixasClient({
   const [desmarcarPendingId, setDesmarcarPendingId] = useState<number | null>(null);
   const [, startDesmarcar] = useTransition();
   const [batchPayPending, startBatchPay] = useTransition();
+  const [batchSkipPending, startBatchSkip] = useTransition();
 
   function openCreate() {
     setEditTarget(null);
@@ -206,6 +209,21 @@ export function MovimentacoesFixasClient({
       if (result.success) {
         toast.success(`${ids.length} pagamento${ids.length > 1 ? "s" : ""} registrado${ids.length > 1 ? "s" : ""}.`, {
           description: "Movimentações criadas em Movimentações.",
+        });
+      } else {
+        toast.error(result.error);
+      }
+    });
+  }
+
+  function handleBatchSkip() {
+    const ids = [...selectedIds];
+    startBatchSkip(async () => {
+      const result = await batchPularCicloAction(ids);
+      setSelectedIds(new Set());
+      if (result.success) {
+        toast.success(`${ids.length} ciclo${ids.length > 1 ? "s" : ""} pulado${ids.length > 1 ? "s" : ""}.`, {
+          description: "Sem movimentações criadas.",
         });
       } else {
         toast.error(result.error);
@@ -429,8 +447,18 @@ export function MovimentacoesFixasClient({
             </Button>
             <Button
               size="sm"
+              variant="outline"
+              onClick={handleBatchSkip}
+              disabled={batchSkipPending || batchPayPending}
+              className="h-7 border-indigo-300 text-xs text-indigo-700 hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-400 dark:hover:bg-indigo-950"
+            >
+              <SkipForward className="size-3.5" />
+              Pular ciclo
+            </Button>
+            <Button
+              size="sm"
               onClick={handleBatchPay}
-              disabled={batchPayPending}
+              disabled={batchPayPending || batchSkipPending}
               className="h-7 border-emerald-300 bg-emerald-600 text-xs text-white hover:bg-emerald-700 dark:border-emerald-800 dark:bg-emerald-700 dark:hover:bg-emerald-600"
             >
               <CheckCircle2 className="size-3.5" />

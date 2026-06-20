@@ -2,6 +2,8 @@ export interface DashboardResumoMes {
   receitas: number;
   despesas: number;
   saldo: number;
+  variacaoReceitas: number | null;
+  variacaoDespesas: number | null;
 }
 
 export interface DashboardMovimentacaoRecente {
@@ -58,6 +60,9 @@ export interface DashboardPrevisaoProximoMes {
   receitas: number;
   despesas: number;
   mesNome: string;
+  totalFixas: number;
+  totalCartoes: number;
+  totalDividas: number;
 }
 
 export interface DashboardData {

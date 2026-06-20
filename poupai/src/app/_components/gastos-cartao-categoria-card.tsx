@@ -1,7 +1,11 @@
+"use client";
+
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { CreditCard, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { GastosCartaoCategoriaData } from "@/services/gastos-cartao-categoria";
+import type { GastosCartaoCategoriaData, PeriodoCartao } from "@/services/gastos-cartao-categoria";
+import { fetchGastosCartaoPorCategoria } from "@/actions/gastos-cartao-categoria";
 
 const fmt = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -9,7 +13,6 @@ const fmt = (v: number) =>
 const fmtCompact = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", notation: "compact" });
 
-// Paleta de cores para as barras (indigo brand → variações)
 const BAR_COLORS = [
   "bg-violet-500",
   "bg-indigo-500",
@@ -20,14 +23,33 @@ const BAR_COLORS = [
   "bg-emerald-500",
 ];
 
-const PERIODO_LABEL: Record<GastosCartaoCategoriaData["periodo"], string> = {
-  "3m": "3 meses",
-  "6m": "6 meses",
-  "12m": "12 meses",
+const FILTROS: { label: string; value: PeriodoCartao }[] = [
+  { label: "Semana", value: "7d" },
+  { label: "Mês", value: "1m" },
+  { label: "6 meses", value: "6m" },
+  { label: "12 meses", value: "12m" },
+];
+
+const PERIODO_SUBLABEL: Record<PeriodoCartao, string> = {
+  "7d": "esta semana",
+  "1m": "este mês",
+  "3m": "últimos 3 meses",
+  "6m": "últimos 6 meses",
+  "12m": "últimos 12 meses",
   total: "todo período",
 };
 
-export function GastosCartaoCategoriaCard({ data }: { data: GastosCartaoCategoriaData }) {
+export function GastosCartaoCategoriaCard({ data: initialData }: { data: GastosCartaoCategoriaData }) {
+  const [data, setData] = useState(initialData);
+  const [isPending, startTransition] = useTransition();
+
+  function handlePeriodo(periodo: PeriodoCartao) {
+    startTransition(async () => {
+      const novo = await fetchGastosCartaoPorCategoria(periodo);
+      setData(novo);
+    });
+  }
+
   const { categorias, totalGeral, periodo } = data;
 
   return (
@@ -47,8 +69,27 @@ export function GastosCartaoCategoriaCard({ data }: { data: GastosCartaoCategori
         </Link>
       </div>
 
+      {/* Filtros de período */}
+      <div className="flex gap-1.5 border-b px-4 py-2.5">
+        {FILTROS.map((f) => (
+          <button
+            key={f.value}
+            onClick={() => handlePeriodo(f.value)}
+            disabled={isPending}
+            className={cn(
+              "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+              periodo === f.value
+                ? "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            )}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
       {/* Body */}
-      <div className="flex flex-col gap-4 p-4">
+      <div className={cn("flex flex-col gap-4 p-4 transition-opacity", isPending && "opacity-50")}>
         {categorias.length === 0 ? (
           <div className="py-6 text-center">
             <p className="text-sm text-muted-foreground">Nenhuma compra no cartão ainda.</p>
@@ -61,7 +102,7 @@ export function GastosCartaoCategoriaCard({ data }: { data: GastosCartaoCategori
             {/* Total + período */}
             <div className="flex items-baseline justify-between">
               <p className="text-2xl font-bold tabular-nums">{fmt(totalGeral)}</p>
-              <span className="text-xs text-muted-foreground">últimos {PERIODO_LABEL[periodo]}</span>
+              <span className="text-xs text-muted-foreground">{PERIODO_SUBLABEL[periodo]}</span>
             </div>
 
             {/* Barra empilhada */}

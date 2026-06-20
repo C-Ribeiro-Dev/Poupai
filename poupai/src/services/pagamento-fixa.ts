@@ -42,6 +42,24 @@ export async function executarPagamentoFixa(fixaId: number, userId: string): Pro
   });
 }
 
+export async function pularCicloFixa(fixaId: number, userId: string): Promise<void> {
+  const fixa = await prisma.movimentacaoFixa.findFirst({
+    where: { id: fixaId, userId, isDeleted: false },
+    select: { id: true, ativo: true, pago: true, dataUltimoPagamento: true },
+  });
+
+  if (!fixa) throw new Error("Movimentação fixa não encontrada.");
+  if (!fixa.ativo) throw new Error("Esta movimentação fixa está inativa.");
+  if (isPagoNoCiclo(fixa.pago, fixa.dataUltimoPagamento)) {
+    throw new Error("Esta movimentação fixa já foi marcada neste mês.");
+  }
+
+  await prisma.movimentacaoFixa.update({
+    where: { id: fixaId },
+    data: { pago: true, dataUltimoPagamento: new Date() },
+  });
+}
+
 export async function desfazerPagamentoFixa(fixaId: number, userId: string): Promise<void> {
   await prisma.$transaction(async (tx) => {
     const fixa = await tx.movimentacaoFixa.findFirst({
