@@ -412,7 +412,7 @@ export async function DashboardContent({
     getSituacaoFinanceira(userId),
     getPlanoAcao(userId),
     getGastosInteligentes(userId),
-    getGastosCartaoPorCategoria(userId, "6m"),
+    getGastosCartaoPorCategoria(userId),
     getCartaoVsDinheiro(userId, mesRef),
   ]);
   const name = user?.user_metadata?.nome as string | undefined;
