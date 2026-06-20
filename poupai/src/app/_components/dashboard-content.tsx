@@ -401,7 +401,7 @@ export async function DashboardContent({
       </div>
 
       {/* ── KPI Cards ── */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-7">
         {/* Saldo Total — destaque */}
         <KpiCard
           className="col-span-2 md:col-span-1"
@@ -472,6 +472,28 @@ export async function DashboardContent({
           value={String(data.fixasPagas)}
           valueColor="text-emerald-600 dark:text-emerald-400"
           sublabel="neste ciclo"
+        />
+
+        {/* A receber no próximo mês */}
+        <KpiCard
+          icon={ArrowUpRight}
+          iconBg="bg-emerald-500/10"
+          iconColor="text-emerald-500"
+          label="A receber"
+          value={formatCurrency(data.previsaoProximoMes.receitas)}
+          valueColor="text-emerald-600 dark:text-emerald-400"
+          sublabel={`em ${data.previsaoProximoMes.mesNome}`}
+        />
+
+        {/* A pagar no próximo mês */}
+        <KpiCard
+          icon={ArrowDownRight}
+          iconBg="bg-indigo-500/10"
+          iconColor="text-indigo-500"
+          label="A pagar"
+          value={formatCurrency(data.previsaoProximoMes.despesas)}
+          valueColor="text-indigo-600 dark:text-indigo-400"
+          sublabel={`em ${data.previsaoProximoMes.mesNome}`}
         />
       </div>
 

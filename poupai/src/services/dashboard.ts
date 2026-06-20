@@ -5,6 +5,7 @@ import { getInsightsMes } from "./insights";
 import { getOrcamentosComGasto } from "./orcamentos";
 import { getMetasResumo } from "./metas";
 import { isPagoNoCiclo, vencimentoNoCiclo, isEncerrada } from "@/lib/fixas-ciclo";
+import { mesRefPrimeiraParcela, mesRefToString, addMeses, valorParcela } from "@/lib/cartao-fatura";
 
 export async function getDashboardData(userId: string, mesRef?: Date): Promise<DashboardData> {
   const now = new Date();
@@ -23,6 +24,8 @@ export async function getDashboardData(userId: string, mesRef?: Date): Promise<D
     insights,
     orcamentosData,
     metas,
+    cartoesAtivos,
+    comprasCartao,
   ] = await Promise.all([
     prisma.movimentacao.aggregate({
       where: {
@@ -94,6 +97,20 @@ export async function getDashboardData(userId: string, mesRef?: Date): Promise<D
     getInsightsMes(userId, ref),
     getOrcamentosComGasto(userId, ref),
     getMetasResumo(userId),
+    prisma.cartao.findMany({
+      where: { userId, isDeleted: false, ativo: true },
+      select: { id: true, diaFechamento: true },
+    }),
+    prisma.compraCartao.findMany({
+      where: { userId, isDeleted: false },
+      select: {
+        cartaoId: true,
+        valorTotal: true,
+        parcelas: true,
+        dataCompra: true,
+        recorrente: true,
+      },
+    }),
   ]);
 
   const receitasMes = Number(String(receitasMesAgg._sum.valor ?? 0));
@@ -112,6 +129,45 @@ export async function getDashboardData(userId: string, mesRef?: Date): Promise<D
     const venc = vencimentoNoCiclo(f.diaVencimento, f.dataVencimento, now);
     return venc !== null && venc < now;
   }).length;
+
+  // ── Previsão próximo mês ─────────────────────────────────────────────────
+  const proximoMes = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const proximoMesKey = mesRefToString({ ano: proximoMes.getFullYear(), mes: proximoMes.getMonth() });
+
+  let receitasFixasProximoMes = 0;
+  let despesasFixasProximoMes = 0;
+
+  for (const f of proximosVencimentos) {
+    if (isEncerrada(f.dataFim, proximoMes)) continue;
+    const venc = vencimentoNoCiclo(f.diaVencimento, f.dataVencimento, proximoMes);
+    if (venc === null) continue;
+    // Fixas com data específica só entram se cair no próximo mês
+    if (!f.diaVencimento && f.dataVencimento) {
+      const vencDate = new Date(f.dataVencimento);
+      if (vencDate.getFullYear() !== proximoMes.getFullYear() || vencDate.getMonth() !== proximoMes.getMonth()) continue;
+    }
+    const valor = Number(String(f.valor));
+    if (f.isEntrada) receitasFixasProximoMes += valor;
+    else despesasFixasProximoMes += valor;
+  }
+
+  let totalFaturasProximoMes = 0;
+  for (const cartao of cartoesAtivos) {
+    for (const compra of comprasCartao.filter((c) => c.cartaoId === cartao.id)) {
+      const total = Number(String(compra.valorTotal));
+      const primeira = mesRefPrimeiraParcela(compra.dataCompra, cartao.diaFechamento);
+      if (compra.recorrente) {
+        if (mesRefToString(primeira) <= proximoMesKey) totalFaturasProximoMes += total;
+      } else {
+        for (let i = 0; i < compra.parcelas; i++) {
+          if (mesRefToString(addMeses(primeira, i)) === proximoMesKey) {
+            totalFaturasProximoMes += valorParcela(total, compra.parcelas, i);
+            break;
+          }
+        }
+      }
+    }
+  }
 
   // ── Projeção fim do mês ──────────────────────────────────────────────────
   const proximosAll = proximosVencimentos.filter(
@@ -173,6 +229,11 @@ export async function getDashboardData(userId: string, mesRef?: Date): Promise<D
         categoria: f.categoria,
         formaPagamento: f.formaPagamento,
       })),
+    previsaoProximoMes: {
+      receitas: receitasFixasProximoMes,
+      despesas: despesasFixasProximoMes + totalFaturasProximoMes,
+      mesNome: new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" }).format(proximoMes),
+    },
     mes: new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" }).format(ref),
     insights,
     orcamento:

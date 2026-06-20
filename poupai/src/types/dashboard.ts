@@ -54,6 +54,12 @@ export interface DashboardProjecao {
   despesasPendentes: number;
 }
 
+export interface DashboardPrevisaoProximoMes {
+  receitas: number;
+  despesas: number;
+  mesNome: string;
+}
+
 export interface DashboardData {
   resumoMes: DashboardResumoMes;
   saldoTotal: number;
@@ -67,4 +73,5 @@ export interface DashboardData {
   orcamento: DashboardOrcamento | null;
   metas: DashboardMeta[];
   projecao: DashboardProjecao;
+  previsaoProximoMes: DashboardPrevisaoProximoMes;
 }
