@@ -17,5 +17,6 @@ export const getCurrentUser = cache(async (): Promise<User | null> => {
 export const getCurrentUserId = cache(async (): Promise<string> => {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  return user.id;
+  const sharedAccountId = user.user_metadata?.shared_account_id as string | undefined;
+  return sharedAccountId ?? user.id;
 });
